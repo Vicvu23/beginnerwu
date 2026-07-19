@@ -280,38 +280,24 @@
 </div>
 
 <script>
-// ============================================================
-// CONFIG
-// ============================================================
-const GITHUB_USERNAME = 'YOUR_GITHUB_USERNAME';
-const REPO_NAME = 'YOUR_REPO_NAME';
+const GITHUB_USERNAME = 'vicvu23'; 
+const REPO_NAME = 'beginnerwu';
 
-// Nội dung phần giới thiệu hiện ngay khi vào trang. Sửa các trường bên dưới
-// cho phù hợp với bạn — text ở đây chỉ là placeholder.
 const PROFILE = {
-  name: 'Your Name',
-  role: 'InfoSec student · CTF player · builds things that break things',
+  name: 'D4z2', // Đã sửa mẫu theo tên bạn
+  role: 'Pwn · Reverse Engineering',
   bio: [
-    'Mình là sinh viên an toàn thông tin, tập trung vào khai thác lỗ hổng, reverse engineering và ứng dụng ML trong bảo mật. Trang này lưu lại các bài writeup sau mỗi giải CTF mình tham gia.',
-    'Mỗi case file bên trái là một bài viết — từ phân tích binary, khai thác web, đến giải mã crypto challenge.'
   ],
-  skills: ['Web Exploitation', 'Reverse Engineering', 'Cryptography', 'Malware Analysis', 'Python', 'ML for Security'],
-  links: [
-    { label: 'GitHub ↗', url: `https://github.com/${GITHUB_USERNAME}` },
-    { label: 'Email ↗', url: 'mailto:you@example.com' }
-  ]
+  skills: ['C/C++', 'Python', 'Reverse Engineering', 'Pwn],
 };
 
-// Chỉ những issue được tạo bởi các vai trò này mới được render lên trang.
-// Vì Issues trên GitHub public repo mặc định AI CŨNG tạo được, đây là lớp
-// lọc quan trọng nhất phù hợp với cơ chế của GitHub: field author_association
-// do chính GitHub tính toán phía server, người dùng không giả mạo được.
-const ALLOWED_AUTHOR_ASSOCIATIONS = ['OWNER', 'MEMBER', 'COLLABORATOR'];
+// Đã thêm 'NONE' vào để dễ test lúc đầu. Khi nào chạy thật, bạn có thể xóa 'NONE' đi.
+const ALLOWED_AUTHOR_ASSOCIATIONS = ['OWNER', 'MEMBER', 'COLLABORATOR', 'NONE'];
 
-// Cache nhẹ để giảm số lần gọi GitHub API (giới hạn 60 req/giờ cho request
-// không xác thực) — tránh trang bị "đơ" khi nhiều người xem cùng lúc.
+// DEBUG MODE: Tắt cache để F5 là thấy bài ngay lập tức
+const ENABLE_CACHE = false; 
 const CACHE_KEY = 'ctf-writeups-cache-v1';
-const CACHE_TTL_MS = 5 * 60 * 1000; // 5 phút
+const CACHE_TTL_MS = 5 * 60 * 1000;
 
 const CATEGORY_COLORS = {
   web: 'var(--cat-web)', pwn: 'var(--cat-pwn)', crypto: 'var(--cat-crypto)',
@@ -324,9 +310,7 @@ marked.setOptions({
     const language = hljs.getLanguage(lang) ? lang : 'plaintext';
     return hljs.highlight(code, { language }).value;
   },
-  breaks: true,
-  headerIds: false,
-  mangle: false
+  breaks: true, headerIds: false, mangle: false
 });
 
 DOMPurify.addHook('afterSanitizeAttributes', (node) => {
@@ -358,45 +342,67 @@ document.getElementById('menuBtn').addEventListener('click', () => {
   document.getElementById('sidebar').classList.toggle('open');
 });
 
-// ---------------- category helper ----------------
 function getCategory(post) {
   const labels = (post.labels || []).map(l => (typeof l === 'string' ? l : l.name || '').toLowerCase());
   const found = labels.find(l => CATEGORY_COLORS[l]);
   return found || 'misc';
 }
 
-// ---------------- fetch + security filtering ----------------
+// ---------------- fetch + debug ----------------
 async function fetchIssues() {
-  const cached = readCache();
-  if (cached) {
-    posts = cached;
-    posts.length ? renderPostList() : renderEmptyIndex();
-    return; // vẫn có thể refresh nền nếu muốn; giữ đơn giản ở đây
+  // Bắt lỗi quên thay đổi biến môi trường
+  if (GITHUB_USERNAME === 'YOUR_GITHUB_USERNAME') {
+    document.getElementById('bootLog').innerHTML = `<span class="err">LỖI: Bạn chưa đổi GITHUB_USERNAME và REPO_NAME trong file code.</span>`;
+    return;
+  }
+
+  if (ENABLE_CACHE) {
+    const cached = readCache();
+    if (cached) {
+      posts = cached;
+      posts.length ? renderPostList() : renderEmptyIndex();
+      return; 
+    }
+  } else {
+    sessionStorage.removeItem(CACHE_KEY); // Xóa sạch cache cũ
   }
 
   const url = `https://api.github.com/repos/${encodeURIComponent(GITHUB_USERNAME)}/${encodeURIComponent(REPO_NAME)}/issues?labels=writeup&state=open&per_page=100`;
+  console.log("🔗 Đang gọi API tới:", url);
 
   try {
     const res = await fetch(url, { headers: { 'Accept': 'application/vnd.github+json' } });
-    if (!res.ok) throw new Error(`GitHub API ${res.status}`);
+    if (!res.ok) {
+      if(res.status === 404) throw new Error("Lỗi 404: Không tìm thấy Repo. Hãy chắc chắn Repository của bạn đang để chế độ PUBLIC.");
+      throw new Error(`GitHub API Lỗi ${res.status}`);
+    }
+    
     const data = await res.json();
+    console.log("📦 Dữ liệu thô từ GitHub:", data);
+
     const rawList = Array.isArray(data) ? data : [];
 
-    // Lọc theo cơ chế GitHub issues:
-    // 1) bỏ pull request (endpoint /issues trả về cả PR)
-    // 2) chỉ giữ issue do owner/member/collaborator tạo — chặn issue rác/độc
-    //    hại do người ngoài (public) tự tạo trên repo public, dù có gắn được
-    //    label "writeup" hay không.
-    posts = rawList.filter(item =>
-      !item.pull_request &&
-      ALLOWED_AUTHOR_ASSOCIATIONS.includes(item.author_association)
-    );
+    if (rawList.length === 0) {
+      console.warn("⚠️ GitHub không trả về bài nào! Kiểm tra: 1. Repo có issue nào chưa? 2. Issue đã gắn đúng nhãn 'writeup' chưa (chữ thường)?");
+    }
 
-    writeCache(posts);
+    posts = rawList.filter(item => {
+      const isPR = item.pull_request;
+      const isAllowedAuthor = ALLOWED_AUTHOR_ASSOCIATIONS.includes(item.author_association);
+      
+      if (isPR) console.log(`⏩ Bỏ qua PR: ${item.title}`);
+      if (!isAllowedAuthor) console.log(`🚫 Bỏ qua do quyền tác giả (${item.author_association}): ${item.title}`);
+      
+      return !isPR && isAllowedAuthor;
+    });
+
+    console.log("✅ Dữ liệu sau khi lọc (sẽ hiển thị):", posts);
+
+    if (ENABLE_CACHE) writeCache(posts);
     posts.length ? renderPostList() : renderEmptyIndex();
   } catch (err) {
     document.getElementById('bootLog').innerHTML =
-      `&gt; connecting to github.com/issues<br>&gt; <span class="err">error: ${err.message ? escapeText(err.message) : 'fetch failed'}</span>`;
+      `&gt; connecting to github.com/issues<br>&gt; <span class="err">LỖI: ${err.message ? escapeText(err.message) : 'fetch failed'}</span>`;
     console.error(err);
   }
 }
@@ -410,9 +416,11 @@ function readCache() {
     return data;
   } catch { return null; }
 }
+
 function writeCache(data) {
   try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data })); } catch {}
 }
+
 function escapeText(str) {
   const d = document.createElement('div'); d.textContent = str; return d.innerHTML;
 }
@@ -420,7 +428,7 @@ function escapeText(str) {
 // ---------------- render ----------------
 function renderEmptyIndex() {
   document.getElementById('post-list').innerHTML =
-    `<div class="boot-log"><span class="ok">&gt; connected</span><br>&gt; 0 verified case files found<br>&gt; create a labeled issue as owner/collaborator to publish one</div>`;
+    `<div class="boot-log"><span class="ok">&gt; connected</span><br>&gt; 0 verified case files found<br>&gt; <span style="color:var(--signal)">Vui lòng ấn F12 -> Console để xem chi tiết nguyên nhân.</span></div>`;
 }
 
 function renderPostList() {
@@ -430,7 +438,7 @@ function renderPostList() {
   posts.forEach(post => {
     const cat = getCategory(post);
     const color = CATEGORY_COLORS[cat] || CATEGORY_COLORS.misc;
-    const date = new Date(post.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+    const date = new Date(post.created_at).toLocaleDateString('vi-VN', { year: 'numeric', month: '2-digit', day: '2-digit' });
 
     const btn = document.createElement('button');
     btn.className = 'post-item';
@@ -461,7 +469,6 @@ function renderPostList() {
   });
 }
 
-// ---------------- intro (màn hình mở đầu) ----------------
 function renderIntro() {
   document.querySelectorAll('.post-item').forEach(el => el.classList.remove('active'));
   document.getElementById('sidebar').classList.remove('open');
@@ -538,9 +545,9 @@ function loadPost(id) {
   const cat = getCategory(post);
   const color = CATEGORY_COLORS[cat] || CATEGORY_COLORS.misc;
   const idx = posts.findIndex(p => p.id === id) + 1;
-  const date = new Date(post.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  const date = new Date(post.created_at).toLocaleDateString('vi-VN', { year: 'numeric', month: '2-digit', day: '2-digit' });
 
-  const rawHtml = marked.parse(post.body || '*No content provided for this case.*');
+  const rawHtml = marked.parse(post.body || '*Không có nội dung.*');
   const safeHtml = sanitizeHtml(rawHtml);
 
   const inner = document.getElementById('readerInner');
