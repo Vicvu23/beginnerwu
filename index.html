@@ -1,590 +1,426 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="Content-Security-Policy" content="
-    default-src 'self';
-    script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com;
-    style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com;
-    font-src https://fonts.gstatic.com;
-    img-src 'self' https: data:;
-    connect-src 'self' https://api.github.com;
-    object-src 'none';
-    base-uri 'self';
-">
-<title>case files // CTF writeups</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>D4z2 | CTF Writeups</title>
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
-
-<style>
-  /* ---------------------------------------------------------
-     TOKENS
-     signal  = terminal-amber accent, the one bright thing on the page
-     ink     = dark mode surfaces, paper = light mode surfaces
-  --------------------------------------------------------- */
-  :root {
-    --ink:        #0a0c0f;
-    --ink-raised: #12151a;
-    --ink-line:   #22262c;
-    --paper:      #eef1ef;
-    --paper-raised: #ffffff;
-    --paper-line: #d7dcd9;
-    --signal:     #ffb454;
-    --signal-dim: #8a5f2b;
-    --text:       #e7e9ea;
-    --text-dim:   #8b9199;
-    --cat-web:    #5aa2ff;
-    --cat-pwn:    #ff5a5a;
-    --cat-crypto: #b98bff;
-    --cat-forensics: #4fd1a5;
-    --cat-rev:    #ffd25a;
-    --cat-misc:   #9aa3ab;
-
-    --bg: var(--ink);
-    --surface: var(--ink-raised);
-    --line: var(--ink-line);
-    --fg: var(--text);
-    --fg-dim: var(--text-dim);
-  }
-  [data-theme="light"] {
-    --bg: var(--paper);
-    --surface: var(--paper-raised);
-    --line: var(--paper-line);
-    --fg: #14171a;
-    --fg-dim: #5b6167;
-    --signal-dim: #c98a3a;
-  }
-
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  html { -webkit-font-smoothing: antialiased; }
-  body {
-    background: var(--bg);
-    color: var(--fg);
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    font-family: 'IBM Plex Sans', sans-serif;
-    transition: background .25s ease, color .25s ease;
-  }
-  .mono { font-family: 'IBM Plex Mono', monospace; }
-
-  ::selection { background: var(--signal); color: #14171a; }
-  :focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
-
-  /* ---------------------------------------------------------
-     TOP BAR
-  --------------------------------------------------------- */
-  header.topbar {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 0.9rem 1.5rem;
-    border-bottom: 1px solid var(--line);
-    background: var(--surface);
-  }
-  .brand { display: flex; align-items: baseline; gap: .5rem; }
-  .brand .path { font-family: 'IBM Plex Mono', monospace; font-size: .95rem; color: var(--fg-dim); }
-  .brand .path b { color: var(--fg); font-weight: 600; }
-  .cursor {
-    display: inline-block; width: 8px; height: 1.05rem; background: var(--signal);
-    animation: blink 1.1s steps(1) infinite; vertical-align: -3px;
-  }
-  @keyframes blink { 50% { opacity: 0; } }
-
-  .topbar-actions { display: flex; align-items: center; gap: .6rem; }
-  .theme-toggle {
-    font-family: 'IBM Plex Mono', monospace; font-size: .78rem; letter-spacing: .04em;
-    padding: .45rem .8rem; border-radius: 3px; border: 1px solid var(--line);
-    background: transparent; color: var(--fg-dim); cursor: pointer;
-    text-transform: uppercase;
-  }
-  .theme-toggle:hover { color: var(--signal); border-color: var(--signal-dim); }
-
-  /* ---------------------------------------------------------
-     LAYOUT
-  --------------------------------------------------------- */
-  .container { display: flex; flex: 1; overflow: hidden; }
-
-  .sidebar {
-    width: 320px; flex-shrink: 0;
-    background: var(--surface);
-    border-right: 1px solid var(--line);
-    overflow-y: auto;
-  }
-  .sidebar-head {
-    padding: .9rem 1.1rem .6rem; font-family: 'IBM Plex Mono', monospace;
-    font-size: .7rem; letter-spacing: .12em; text-transform: uppercase; color: var(--fg-dim);
-    border-bottom: 1px solid var(--line);
-  }
-
-  .post-item {
-    display: block; width: 100%; text-align: left;
-    padding: .9rem 1.1rem; border-bottom: 1px solid var(--line);
-    cursor: pointer; background: transparent; border-left: 3px solid transparent;
-    transition: background .15s ease, border-color .15s ease;
-  }
-  .post-item:hover { background: color-mix(in srgb, var(--signal) 6%, transparent); }
-  .post-item.active { border-left-color: var(--signal); background: color-mix(in srgb, var(--signal) 9%, transparent); }
-
-  .post-item-top { display: flex; align-items: center; gap: .5rem; margin-bottom: .4rem; }
-  .tag {
-    font-family: 'IBM Plex Mono', monospace; font-size: .64rem; letter-spacing: .06em;
-    padding: .12rem .45rem; border-radius: 2px; text-transform: uppercase; font-weight: 600;
-    border: 1px solid currentColor;
-  }
-  .post-item-title { font-size: .92rem; font-weight: 500; line-height: 1.35; color: var(--fg); }
-  .post-date { font-family: 'IBM Plex Mono', monospace; font-size: .72rem; color: var(--fg-dim); margin-top: .35rem; }
-
-  /* ---------------------------------------------------------
-     READER
-  --------------------------------------------------------- */
-  .reader { flex: 1; overflow-y: auto; }
-  .reader-inner { max-width: 780px; margin: 0 auto; padding: 3rem 2rem 6rem; }
-
-  .case-meta { display: flex; align-items: center; gap: .7rem; margin-bottom: 1rem; flex-wrap: wrap; }
-  .case-no { font-family: 'IBM Plex Mono', monospace; font-size: .75rem; color: var(--fg-dim); letter-spacing: .06em; }
-
-  .reader h1 {
-    font-family: 'IBM Plex Mono', monospace; font-size: 2.1rem; font-weight: 700;
-    letter-spacing: -.01em; line-height: 1.2; margin-bottom: .6rem; color: var(--fg);
-  }
-  #post-meta { font-family: 'IBM Plex Mono', monospace; font-size: .8rem; color: var(--fg-dim); margin-bottom: 2rem; }
-
-  /* the signature element: a stamped case tag next to the title */
-  .stamp {
-    display: inline-flex; align-items: center; gap: .4rem;
-    font-family: 'IBM Plex Mono', monospace; font-size: .68rem; font-weight: 700;
-    letter-spacing: .1em; text-transform: uppercase;
-    padding: .3rem .6rem; border: 1.5px solid var(--signal); color: var(--signal);
-    border-radius: 2px; transform: rotate(-2deg);
-    mix-blend-mode: var(--stamp-blend, normal);
-  }
-
-  .markdown-body { line-height: 1.75; font-size: 1rem; }
-  .markdown-body h2 { font-family: 'IBM Plex Mono', monospace; font-size: 1.3rem; margin: 2.2rem 0 1rem; padding-top: 1.4rem; border-top: 1px solid var(--line); }
-  .markdown-body h3 { font-family: 'IBM Plex Mono', monospace; font-size: 1.05rem; margin: 1.8rem 0 .8rem; color: var(--signal); }
-  .markdown-body p { margin-bottom: 1.1rem; color: var(--fg); }
-  .markdown-body a { color: var(--signal); text-decoration: underline; text-underline-offset: 2px; }
-  .markdown-body img { max-width: 100%; border-radius: 4px; margin: 1.2rem 0; border: 1px solid var(--line); }
-  .markdown-body pre {
-    background: #14171c; border: 1px solid var(--line); padding: 1rem 1.1rem; border-radius: 4px;
-    overflow-x: auto; margin-bottom: 1.2rem; font-size: .86rem;
-  }
-  .markdown-body code { font-family: 'IBM Plex Mono', monospace; }
-  .markdown-body :not(pre) > code {
-    background: color-mix(in srgb, var(--signal) 12%, transparent); color: var(--signal);
-    padding: .1rem .35rem; border-radius: 3px; font-size: .88em;
-  }
-  .markdown-body blockquote { border-left: 3px solid var(--signal); padding-left: 1rem; margin-bottom: 1.1rem; color: var(--fg-dim); }
-  .markdown-body ul, .markdown-body ol { margin: 0 0 1.1rem 1.3rem; }
-  .markdown-body li { margin-bottom: .4rem; }
-  .markdown-body table { border-collapse: collapse; width: 100%; margin-bottom: 1.2rem; font-size: .9rem; }
-  .markdown-body th, .markdown-body td { border: 1px solid var(--line); padding: .5rem .7rem; text-align: left; }
-  .markdown-body th { font-family: 'IBM Plex Mono', monospace; background: var(--surface); }
-
-  /* ---------------------------------------------------------
-     TERMINAL-STYLE LOADING / EMPTY STATES
-  --------------------------------------------------------- */
-  .boot-log { font-family: 'IBM Plex Mono', monospace; font-size: .82rem; color: var(--fg-dim); padding: 1.5rem 1.1rem; line-height: 1.9; }
-  .boot-log .ok { color: var(--cat-forensics); }
-  .boot-log .err { color: var(--cat-pwn); }
-
-  .empty-state { padding: 3rem 2rem; font-family: 'IBM Plex Mono', monospace; color: var(--fg-dim); font-size: .9rem; line-height: 1.8; }
-  .empty-state .cursor { margin-left: 2px; }
-
-  /* ---------------------------------------------------------
-     INTRO — hiện ngay khi vào trang, trước khi chọn case file
-  --------------------------------------------------------- */
-  .intro { padding: 1rem 0 1rem; }
-  .intro-eyebrow {
-    font-family: 'IBM Plex Mono', monospace; font-size: .72rem; letter-spacing: .14em;
-    text-transform: uppercase; color: var(--signal); margin-bottom: 1rem;
-    display: flex; align-items: center; gap: .5rem;
-  }
-  .intro-eyebrow::before { content: ''; width: 6px; height: 6px; background: var(--signal); display: inline-block; border-radius: 50%; }
-  .intro h1 {
-    font-family: 'IBM Plex Mono', monospace; font-size: 2.6rem; font-weight: 700;
-    letter-spacing: -.01em; line-height: 1.15; margin-bottom: .8rem; color: var(--fg);
-  }
-  .intro .role { font-family: 'IBM Plex Mono', monospace; font-size: 1rem; color: var(--fg-dim); margin-bottom: 1.6rem; }
-  .intro .bio { font-size: 1.02rem; line-height: 1.8; color: var(--fg); max-width: 62ch; margin-bottom: 1.8rem; }
-  .intro .bio p + p { margin-top: 1rem; }
-
-  .skill-row { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 2rem; }
-  .skill-chip {
-    font-family: 'IBM Plex Mono', monospace; font-size: .74rem; padding: .35rem .7rem;
-    border: 1px solid var(--line); border-radius: 3px; color: var(--fg-dim);
-  }
-
-  .link-row { display: flex; flex-wrap: wrap; gap: .7rem; margin-bottom: 2.4rem; }
-  .link-row a {
-    font-family: 'IBM Plex Mono', monospace; font-size: .82rem; color: var(--fg);
-    padding: .55rem .95rem; border: 1px solid var(--line); border-radius: 3px;
-    text-decoration: none; transition: border-color .15s ease, color .15s ease;
-  }
-  .link-row a:hover { border-color: var(--signal); color: var(--signal); }
-
-  .intro-divider {
-    display: flex; align-items: center; gap: .8rem; margin-bottom: 1.4rem;
-    font-family: 'IBM Plex Mono', monospace; font-size: .72rem; letter-spacing: .1em;
-    text-transform: uppercase; color: var(--fg-dim);
-  }
-  .intro-divider::after { content: ''; flex: 1; height: 1px; background: var(--line); }
-
-  @media (max-width: 780px) {
-    .sidebar { position: fixed; inset: 0 20% 0 0; z-index: 20; transform: translateX(-100%); transition: transform .2s ease; }
-    .sidebar.open { transform: translateX(0); }
-    .menu-btn { display: inline-flex; }
-    .reader-inner { padding: 2rem 1.2rem 4rem; }
-    .reader h1 { font-size: 1.6rem; }
-  }
-  .menu-btn { display: none; }
-
-  @media (prefers-reduced-motion: reduce) {
-    .cursor { animation: none; opacity: 1; }
-    * { transition: none !important; }
-  }
-</style>
-</head>
-<body data-theme="dark">
-
-<header class="topbar">
-  <div class="brand">
-    <button class="theme-toggle menu-btn" id="menuBtn" aria-label="Toggle case list">≡</button>
-    <button class="path" id="brandBtn" style="background:none;border:none;cursor:pointer;padding:0;color:inherit;font:inherit;">~/<b>ctf-writeups</b>/case-files<span class="cursor"></span></button>
-  </div>
-  <div class="topbar-actions">
-    <button class="theme-toggle" id="themeToggle">light mode</button>
-  </div>
-</header>
-
-<div class="container">
-  <nav class="sidebar" id="sidebar">
-    <div class="sidebar-head">case index</div>
-    <div id="post-list">
-      <div class="boot-log" id="bootLog">
-        &gt; connecting to github.com/issues<span class="cursor"></span>
-      </div>
-    </div>
-  </nav>
-
-  <main class="reader">
-    <div class="reader-inner" id="readerInner"></div>
-  </main>
-</div>
-
-<script>
-const GITHUB_USERNAME = 'vicvu23'; 
-const REPO_NAME = 'beginnerwu';
-
-const PROFILE = {
-  name: 'D4z2', // Đã sửa mẫu theo tên bạn
-  role: 'Pwn · Reverse Engineering',
-  bio: [
-  ],
-  skills: ['C/C++', 'Python', 'Reverse Engineering', 'Pwn'],
-};
-
-// Đã thêm 'NONE' vào để dễ test lúc đầu. Khi nào chạy thật, bạn có thể xóa 'NONE' đi.
-const ALLOWED_AUTHOR_ASSOCIATIONS = ['OWNER', 'MEMBER', 'COLLABORATOR', 'NONE'];
-
-// DEBUG MODE: Tắt cache để F5 là thấy bài ngay lập tức
-const ENABLE_CACHE = false; 
-const CACHE_KEY = 'ctf-writeups-cache-v1';
-const CACHE_TTL_MS = 5 * 60 * 1000;
-
-const CATEGORY_COLORS = {
-  web: 'var(--cat-web)', pwn: 'var(--cat-pwn)', crypto: 'var(--cat-crypto)',
-  forensics: 'var(--cat-forensics)', rev: 'var(--cat-rev)', reverse: 'var(--cat-rev)',
-  misc: 'var(--cat-misc)'
-};
-
-marked.setOptions({
-  highlight: (code, lang) => {
-    const language = hljs.getLanguage(lang) ? lang : 'plaintext';
-    return hljs.highlight(code, { language }).value;
-  },
-  breaks: true, headerIds: false, mangle: false
-});
-
-DOMPurify.addHook('afterSanitizeAttributes', (node) => {
-  if (node.tagName === 'A') {
-    node.setAttribute('target', '_blank');
-    node.setAttribute('rel', 'noopener noreferrer nofollow');
-  }
-});
-
-function sanitizeHtml(rawHtml) {
-  return DOMPurify.sanitize(rawHtml, {
-    FORBID_TAGS: ['style', 'script', 'iframe', 'object', 'embed', 'form'],
-    FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover']
-  });
-}
-
-let posts = [];
-
-// ---------------- theme ----------------
-function applyTheme(mode) {
-  document.body.setAttribute('data-theme', mode);
-  document.getElementById('themeToggle').textContent = mode === 'dark' ? 'light mode' : 'dark mode';
-}
-document.getElementById('themeToggle').addEventListener('click', () => {
-  const next = document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-  applyTheme(next);
-});
-document.getElementById('menuBtn').addEventListener('click', () => {
-  document.getElementById('sidebar').classList.toggle('open');
-});
-
-function getCategory(post) {
-  const labels = (post.labels || []).map(l => (typeof l === 'string' ? l : l.name || '').toLowerCase());
-  const found = labels.find(l => CATEGORY_COLORS[l]);
-  return found || 'misc';
-}
-
-// ---------------- fetch + debug ----------------
-async function fetchIssues() {
-  // Bắt lỗi quên thay đổi biến môi trường
-  if (GITHUB_USERNAME === 'YOUR_GITHUB_USERNAME') {
-    document.getElementById('bootLog').innerHTML = `<span class="err">LỖI: Bạn chưa đổi GITHUB_USERNAME và REPO_NAME trong file code.</span>`;
-    return;
-  }
-
-  if (ENABLE_CACHE) {
-    const cached = readCache();
-    if (cached) {
-      posts = cached;
-      posts.length ? renderPostList() : renderEmptyIndex();
-      return; 
-    }
-  } else {
-    sessionStorage.removeItem(CACHE_KEY); // Xóa sạch cache cũ
-  }
-
-  const url = `https://api.github.com/repos/${encodeURIComponent(GITHUB_USERNAME)}/${encodeURIComponent(REPO_NAME)}/issues?labels=writeup&state=open&per_page=100`;
-  console.log("🔗 Đang gọi API tới:", url);
-
-  try {
-    const res = await fetch(url, { headers: { 'Accept': 'application/vnd.github+json' } });
-    if (!res.ok) {
-      if(res.status === 404) throw new Error("Lỗi 404: Không tìm thấy Repo. Hãy chắc chắn Repository của bạn đang để chế độ PUBLIC.");
-      throw new Error(`GitHub API Lỗi ${res.status}`);
-    }
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     
-    const data = await res.json();
-    console.log("📦 Dữ liệu thô từ GitHub:", data);
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    const rawList = Array.isArray(data) ? data : [];
+    <!-- Markdown & Highlighting -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
 
-    if (rawList.length === 0) {
-      console.warn("⚠️ GitHub không trả về bài nào! Kiểm tra: 1. Repo có issue nào chưa? 2. Issue đã gắn đúng nhãn 'writeup' chưa (chữ thường)?");
-    }
+    <style>
+        :root {
+            --bg-base: #000000;
+            --bg-surface: #0a0a0a;
+            --bg-card: #111111;
+            --text-main: #f5f5f5;
+            --text-muted: #a1a1aa;
+            --accent: #2dd4bf; /* Teal/Cyan like the image */
+            --accent-hover: #14b8a6;
+            --border: #27272a;
+        }
 
-    posts = rawList.filter(item => {
-      const isPR = item.pull_request;
-      const isAllowedAuthor = ALLOWED_AUTHOR_ASSOCIATIONS.includes(item.author_association);
-      
-      if (isPR) console.log(`⏩ Bỏ qua PR: ${item.title}`);
-      if (!isAllowedAuthor) console.log(`🚫 Bỏ qua do quyền tác giả (${item.author_association}): ${item.title}`);
-      
-      return !isPR && isAllowedAuthor;
-    });
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
 
-    console.log("✅ Dữ liệu sau khi lọc (sẽ hiển thị):", posts);
+        .mono { font-family: 'JetBrains Mono', monospace; }
 
-    if (ENABLE_CACHE) writeCache(posts);
-    posts.length ? renderPostList() : renderEmptyIndex();
-  } catch (err) {
-    document.getElementById('bootLog').innerHTML =
-      `&gt; connecting to github.com/issues<br>&gt; <span class="err">LỖI: ${err.message ? escapeText(err.message) : 'fetch failed'}</span>`;
-    console.error(err);
-  }
-}
+        /* Container */
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+        }
 
-function readCache() {
-  try {
-    const raw = sessionStorage.getItem(CACHE_KEY);
-    if (!raw) return null;
-    const { ts, data } = JSON.parse(raw);
-    if (Date.now() - ts > CACHE_TTL_MS) return null;
-    return data;
-  } catch { return null; }
-}
+        /* --- HERO SECTION --- */
+        .hero {
+            background-color: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 3rem 2.5rem;
+            margin-top: 2rem;
+            margin-bottom: 3rem;
+        }
 
-function writeCache(data) {
-  try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data })); } catch {}
-}
+        .hero h1 {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 800;
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+            margin-bottom: 1.5rem;
+        }
 
-function escapeText(str) {
-  const d = document.createElement('div'); d.textContent = str; return d.innerHTML;
-}
+        .hero p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            max-width: 700px;
+            margin-bottom: 2rem;
+        }
 
-// ---------------- render ----------------
-function renderEmptyIndex() {
-  document.getElementById('post-list').innerHTML =
-    `<div class="boot-log"><span class="ok">&gt; connected</span><br>&gt; 0 verified case files found<br>&gt; <span style="color:var(--signal)">Vui lòng ấn F12 -> Console để xem chi tiết nguyên nhân.</span></div>`;
-}
+        .hero-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
 
-function renderPostList() {
-  const list = document.getElementById('post-list');
-  list.innerHTML = '';
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            border: none;
+        }
 
-  posts.forEach(post => {
-    const cat = getCategory(post);
-    const color = CATEGORY_COLORS[cat] || CATEGORY_COLORS.misc;
-    const date = new Date(post.created_at).toLocaleDateString('vi-VN', { year: 'numeric', month: '2-digit', day: '2-digit' });
+        .btn-primary {
+            background-color: var(--accent);
+            color: #000;
+        }
 
-    const btn = document.createElement('button');
-    btn.className = 'post-item';
-    btn.id = `post-${post.id}`;
-    btn.type = 'button';
-    btn.addEventListener('click', () => loadPost(post.id));
+        .btn-primary:hover {
+            background-color: var(--accent-hover);
+            transform: translateY(-2px);
+        }
 
-    const top = document.createElement('div');
-    top.className = 'post-item-top';
-    const tag = document.createElement('span');
-    tag.className = 'tag mono';
-    tag.style.color = color;
-    tag.textContent = cat;
-    top.appendChild(tag);
+        .btn-outline {
+            background-color: transparent;
+            color: var(--text-main);
+            border: 1px solid var(--border);
+        }
 
-    const title = document.createElement('div');
-    title.className = 'post-item-title';
-    title.textContent = post.title || '(untitled)';
+        .btn-outline:hover {
+            background-color: var(--border);
+        }
 
-    const dateEl = document.createElement('div');
-    dateEl.className = 'post-date';
-    dateEl.textContent = date;
+        .social-icons {
+            display: flex;
+            gap: 0.75rem;
+            margin-left: auto;
+        }
 
-    btn.appendChild(top);
-    btn.appendChild(title);
-    btn.appendChild(dateEl);
-    list.appendChild(btn);
-  });
-}
+        .social-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: 0.2s;
+        }
 
-function renderIntro() {
-  document.querySelectorAll('.post-item').forEach(el => el.classList.remove('active'));
-  document.getElementById('sidebar').classList.remove('open');
+        .social-icon:hover {
+            color: var(--text-main);
+            border-color: var(--text-muted);
+        }
 
-  const inner = document.getElementById('readerInner');
-  inner.innerHTML = '';
+        @media (max-width: 600px) {
+            .social-icons { margin-left: 0; margin-top: 1rem; width: 100%; }
+        }
 
-  const wrap = document.createElement('div');
-  wrap.className = 'intro';
+        /* --- WRITEUP LIST --- */
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            color: var(--text-main);
+        }
 
-  const eyebrow = document.createElement('div');
-  eyebrow.className = 'intro-eyebrow mono';
-  eyebrow.textContent = 'operator profile';
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
 
-  const h1 = document.createElement('h1');
-  h1.textContent = PROFILE.name;
+        .card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+        }
 
-  const role = document.createElement('div');
-  role.className = 'role';
-  role.textContent = PROFILE.role;
+        .card:hover {
+            border-color: var(--accent);
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px -5px rgba(45, 212, 191, 0.1);
+        }
 
-  const bio = document.createElement('div');
-  bio.className = 'bio';
-  PROFILE.bio.forEach(paragraph => {
-    const p = document.createElement('p');
-    p.textContent = paragraph;
-    bio.appendChild(p);
-  });
+        .card-tag {
+            align-self: flex-start;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 0.25rem 0.6rem;
+            border-radius: 4px;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            background: rgba(45, 212, 191, 0.1);
+            color: var(--accent);
+        }
 
-  const skillRow = document.createElement('div');
-  skillRow.className = 'skill-row';
-  PROFILE.skills.forEach(skill => {
-    const chip = document.createElement('span');
-    chip.className = 'skill-chip';
-    chip.textContent = skill;
-    skillRow.appendChild(chip);
-  });
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            line-height: 1.4;
+        }
 
-  const linkRow = document.createElement('div');
-  linkRow.className = 'link-row';
-  PROFILE.links.forEach(link => {
-    const a = document.createElement('a');
-    a.href = link.url;
-    a.textContent = link.label;
-    if (link.url.startsWith('http')) { a.target = '_blank'; a.rel = 'noopener noreferrer'; }
-    linkRow.appendChild(a);
-  });
+        .card-date {
+            margin-top: auto;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
 
-  const divider = document.createElement('div');
-  divider.className = 'intro-divider';
-  divider.textContent = `case files (${posts.length || '…'})`;
+        /* --- READER MODE --- */
+        #reader-view {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
 
-  wrap.appendChild(eyebrow);
-  wrap.appendChild(h1);
-  wrap.appendChild(role);
-  wrap.appendChild(bio);
-  wrap.appendChild(skillRow);
-  wrap.appendChild(linkRow);
-  wrap.appendChild(divider);
-  inner.appendChild(wrap);
-}
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-document.getElementById('brandBtn').addEventListener('click', renderIntro);
+        .back-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            padding: 0;
+            transition: color 0.2s;
+        }
+        .back-btn:hover { color: var(--accent); }
 
-function loadPost(id) {
-  document.querySelectorAll('.post-item').forEach(el => el.classList.remove('active'));
-  const activeItem = document.getElementById(`post-${id}`);
-  if (activeItem) activeItem.classList.add('active');
-  document.getElementById('sidebar').classList.remove('open');
+        .reader-header { margin-bottom: 3rem; border-bottom: 1px solid var(--border); padding-bottom: 2rem; }
+        .reader-title { font-size: 2.5rem; font-weight: 800; margin-bottom: 1rem; line-height: 1.2; }
+        .reader-meta { color: var(--text-muted); font-size: 0.95rem; }
 
-  const post = posts.find(p => p.id === id);
-  if (!post) return;
+        /* Markdown Styles */
+        .markdown-body { font-size: 1.1rem; line-height: 1.8; color: #d4d4d8; }
+        .markdown-body h2 { color: #fff; margin: 2.5rem 0 1rem; font-size: 1.75rem; font-weight: 700; }
+        .markdown-body h3 { color: var(--accent); margin: 2rem 0 1rem; font-size: 1.3rem; }
+        .markdown-body p { margin-bottom: 1.5rem; }
+        .markdown-body a { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; transition: 0.2s; }
+        .markdown-body a:hover { border-color: var(--accent); }
+        .markdown-body img { max-width: 100%; border-radius: 8px; border: 1px solid var(--border); margin: 1.5rem 0; }
+        .markdown-body pre { background-color: #0d0d0d; border: 1px solid var(--border); padding: 1.25rem; border-radius: 8px; overflow-x: auto; margin-bottom: 1.5rem; font-size: 0.9rem; }
+        .markdown-body code { font-family: 'JetBrains Mono', monospace; }
+        .markdown-body p code, .markdown-body li code { background: rgba(255,255,255,0.1); padding: 0.2em 0.4em; border-radius: 4px; font-size: 0.9em; color: var(--accent); }
+        .markdown-body blockquote { border-left: 4px solid var(--accent); padding-left: 1.25rem; margin-left: 0; color: var(--text-muted); font-style: italic; }
+        .markdown-body ul, .markdown-body ol { margin-bottom: 1.5rem; padding-left: 1.5rem; }
+        .markdown-body li { margin-bottom: 0.5rem; }
 
-  const cat = getCategory(post);
-  const color = CATEGORY_COLORS[cat] || CATEGORY_COLORS.misc;
-  const idx = posts.findIndex(p => p.id === id) + 1;
-  const date = new Date(post.created_at).toLocaleDateString('vi-VN', { year: 'numeric', month: '2-digit', day: '2-digit' });
+        /* Loading */
+        .status-msg { text-align: center; padding: 3rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+        .status-msg i { color: var(--accent); margin-right: 0.5rem; }
+    </style>
+</head>
+<body>
 
-  const rawHtml = marked.parse(post.body || '*Không có nội dung.*');
-  const safeHtml = sanitizeHtml(rawHtml);
+    <div class="container">
+        
+        <!-- MÀN HÌNH CHÍNH (HERO + LIST) -->
+        <div id="main-view">
+            <!-- Hero Section -->
+            <section class="hero">
+                <h1>Master Cybersecurity with Elite CTF Writeups</h1>
+                <p>Practical guides, in-depth research, and hands-on walkthroughs for aspiring security experts. Reverse engineering notes, malware analysis, and Pwn challenges from a KMA InfoSec student.</p>
+                
+                <div class="hero-actions">
+                    <button class="btn btn-primary" onclick="document.getElementById('writeups-section').scrollIntoView({behavior: 'smooth'})">
+                        Explore Writeups
+                    </button>
+                    <a href="https://github.com/vicvu23" target="_blank" class="btn btn-outline">
+                        <i class="fa-brands fa-github" style="margin-right: 0.5rem;"></i> GitHub
+                    </a>
+                    
+                    <div class="social-icons">
+                        <a href="#" class="social-icon" title="Twitter/X"><i class="fa-brands fa-x-twitter"></i></a>
+                        <a href="#" class="social-icon" title="LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
+                    </div>
+                </div>
+            </section>
 
-  const inner = document.getElementById('readerInner');
-  inner.innerHTML = '';
+            <!-- List Section -->
+            <section id="writeups-section">
+                <h2 class="section-title">Latest Case Files</h2>
+                <div id="post-list" class="grid">
+                    <div class="status-msg">
+                        <i class="fa-solid fa-circle-notch fa-spin"></i> Fetching from GitHub API...
+                    </div>
+                </div>
+            </section>
+        </div>
 
-  const metaRow = document.createElement('div');
-  metaRow.className = 'case-meta';
-  const caseNo = document.createElement('span');
-  caseNo.className = 'case-no mono';
-  caseNo.textContent = `CASE No. ${String(idx).padStart(3, '0')}`;
-  const stamp = document.createElement('span');
-  stamp.className = 'stamp';
-  stamp.style.setProperty('--stamp-blend', document.body.getAttribute('data-theme') === 'dark' ? 'normal' : 'multiply');
-  stamp.style.color = color; stamp.style.borderColor = color;
-  stamp.textContent = cat;
-  metaRow.appendChild(caseNo);
-  metaRow.appendChild(stamp);
+        <!-- MÀN HÌNH ĐỌC BÀI (READER) -->
+        <div id="reader-view">
+            <button class="back-btn" onclick="showMainView()">
+                <i class="fa-solid fa-arrow-left"></i> Back to Writeups
+            </button>
+            
+            <div class="reader-header">
+                <div id="post-tag" class="card-tag" style="display: inline-block; margin-bottom: 1rem;">TAG</div>
+                <h1 id="post-title" class="reader-title">Title</h1>
+                <div id="post-meta" class="reader-meta">Date</div>
+            </div>
 
-  const h1 = document.createElement('h1');
-  h1.textContent = post.title || '(untitled)';
+            <div id="post-content" class="markdown-body">
+                <!-- Nội dung Markdown sẽ render vào đây -->
+            </div>
+        </div>
 
-  const metaLine = document.createElement('div');
-  metaLine.id = 'post-meta';
-  metaLine.textContent = `filed ${date} · verified author`;
+    </div>
 
-  const body = document.createElement('div');
-  body.className = 'markdown-body';
-  body.innerHTML = safeHtml;
+    <script>
+        // ==========================================
+        // CẤU HÌNH GITHUB
+        // ==========================================
+        const GITHUB_USERNAME = 'vicvu23'; 
+        const REPO_NAME = 'beginnerwu';
+        
+        let posts = [];
 
-  inner.appendChild(metaRow);
-  inner.appendChild(h1);
-  inner.appendChild(metaLine);
-  inner.appendChild(body);
-}
+        // Cấu hình Marked.js
+        marked.setOptions({
+            highlight: (code, lang) => {
+                const language = hljs.getLanguage(lang) ? lang : 'plaintext';
+                return hljs.highlight(code, { language }).value;
+            },
+            breaks: true
+        });
 
-renderIntro();
-fetchIssues();
-</script>
+        DOMPurify.addHook('afterSanitizeAttributes', (node) => {
+            if (node.tagName === 'A') {
+                node.setAttribute('target', '_blank');
+                node.setAttribute('rel', 'noopener noreferrer');
+            }
+        });
+
+        // ==========================================
+        // FETCH DỮ LIỆU TỪ GITHUB ISSUES
+        // ==========================================
+        async function fetchIssues() {
+            const url = `https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/issues?labels=writeup&state=open&per_page=100`;
+            const listEl = document.getElementById('post-list');
+
+            try {
+                const res = await fetch(url, { headers: { 'Accept': 'application/vnd.github+json' } });
+                
+                if (!res.ok) {
+                    throw new Error(`API Error: ${res.status}`);
+                }
+                
+                const data = await res.json();
+                
+                // Lọc bỏ Pull Requests
+                posts = data.filter(item => !item.pull_request);
+
+                if (posts.length === 0) {
+                    listEl.innerHTML = `<div class="status-msg" style="grid-column: 1 / -1;">No writeups found. Create an issue with label 'writeup' on GitHub.</div>`;
+                    return;
+                }
+
+                renderList();
+            } catch (err) {
+                listEl.innerHTML = `<div class="status-msg" style="grid-column: 1 / -1; color: #ef4444;"><i class="fa-solid fa-triangle-exclamation"></i> Error loading writeups: ${err.message}</div>`;
+                console.error(err);
+            }
+        }
+
+        // ==========================================
+        // RENDER DANH SÁCH BÀI VIẾT
+        // ==========================================
+        function getCategory(post) {
+            const labels = (post.labels || []).map(l => (typeof l === 'string' ? l : l.name || ''));
+            // Bỏ label 'writeup' đi để lấy mảng chính (Pwn, Rev, Web...)
+            const specificLabels = labels.filter(l => l.toLowerCase() !== 'writeup');
+            return specificLabels.length > 0 ? specificLabels[0] : 'CTF';
+        }
+
+        function renderList() {
+            const list = document.getElementById('post-list');
+            list.innerHTML = '';
+
+            posts.forEach(post => {
+                const cat = getCategory(post);
+                const date = new Date(post.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.onclick = () => openPost(post.id);
+
+                card.innerHTML = `
+                    <div class="card-tag mono">${cat}</div>
+                    <div class="card-title">${post.title}</div>
+                    <div class="card-date mono">${date}</div>
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        // ==========================================
+        // XỬ LÝ CHUYỂN ĐỔI MÀN HÌNH
+        // ==========================================
+        function openPost(id) {
+            const post = posts.find(p => p.id === id);
+            if (!post) return;
+
+            // Đổ dữ liệu vào Reader
+            document.getElementById('post-tag').textContent = getCategory(post);
+            document.getElementById('post-title').textContent = post.title;
+            document.getElementById('post-meta').textContent = `Published on ${new Date(post.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })} by D4z2`;
+            
+            const rawHtml = marked.parse(post.body || '*No content provided.*');
+            document.getElementById('post-content').innerHTML = DOMPurify.sanitize(rawHtml);
+
+            // Chuyển view
+            document.getElementById('main-view').style.display = 'none';
+            document.getElementById('reader-view').style.display = 'block';
+            window.scrollTo(0, 0); // Cuộn lên đầu trang
+        }
+
+        function showMainView() {
+            document.getElementById('reader-view').style.display = 'none';
+            document.getElementById('main-view').style.display = 'block';
+            // Scroll lại đúng phần danh sách cho tiện
+            document.getElementById('writeups-section').scrollIntoView();
+        }
+
+        // Khởi động
+        fetchIssues();
+    </script>
 </body>
 </html>
