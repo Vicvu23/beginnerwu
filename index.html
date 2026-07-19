@@ -287,7 +287,7 @@
         // FETCH DỮ LIỆU TỪ GITHUB ISSUES
         // ==========================================
         async function fetchIssues() {
-            const url = `https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/issues?labels=writeup&state=open&per_page=100`;
+            const url = `https://api.github.com/repos/${encodeURIComponent(GITHUB_USERNAME)}/${encodeURIComponent(REPO_NAME)}/issues?labels=writeup&state=open&per_page=100&_t=${Date.now()}`;
             const listEl = document.getElementById('post-list');
 
             try {
