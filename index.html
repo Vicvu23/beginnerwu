@@ -198,6 +198,45 @@
   .empty-state { padding: 3rem 2rem; font-family: 'IBM Plex Mono', monospace; color: var(--fg-dim); font-size: .9rem; line-height: 1.8; }
   .empty-state .cursor { margin-left: 2px; }
 
+  /* ---------------------------------------------------------
+     INTRO — hiện ngay khi vào trang, trước khi chọn case file
+  --------------------------------------------------------- */
+  .intro { padding: 1rem 0 1rem; }
+  .intro-eyebrow {
+    font-family: 'IBM Plex Mono', monospace; font-size: .72rem; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--signal); margin-bottom: 1rem;
+    display: flex; align-items: center; gap: .5rem;
+  }
+  .intro-eyebrow::before { content: ''; width: 6px; height: 6px; background: var(--signal); display: inline-block; border-radius: 50%; }
+  .intro h1 {
+    font-family: 'IBM Plex Mono', monospace; font-size: 2.6rem; font-weight: 700;
+    letter-spacing: -.01em; line-height: 1.15; margin-bottom: .8rem; color: var(--fg);
+  }
+  .intro .role { font-family: 'IBM Plex Mono', monospace; font-size: 1rem; color: var(--fg-dim); margin-bottom: 1.6rem; }
+  .intro .bio { font-size: 1.02rem; line-height: 1.8; color: var(--fg); max-width: 62ch; margin-bottom: 1.8rem; }
+  .intro .bio p + p { margin-top: 1rem; }
+
+  .skill-row { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 2rem; }
+  .skill-chip {
+    font-family: 'IBM Plex Mono', monospace; font-size: .74rem; padding: .35rem .7rem;
+    border: 1px solid var(--line); border-radius: 3px; color: var(--fg-dim);
+  }
+
+  .link-row { display: flex; flex-wrap: wrap; gap: .7rem; margin-bottom: 2.4rem; }
+  .link-row a {
+    font-family: 'IBM Plex Mono', monospace; font-size: .82rem; color: var(--fg);
+    padding: .55rem .95rem; border: 1px solid var(--line); border-radius: 3px;
+    text-decoration: none; transition: border-color .15s ease, color .15s ease;
+  }
+  .link-row a:hover { border-color: var(--signal); color: var(--signal); }
+
+  .intro-divider {
+    display: flex; align-items: center; gap: .8rem; margin-bottom: 1.4rem;
+    font-family: 'IBM Plex Mono', monospace; font-size: .72rem; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--fg-dim);
+  }
+  .intro-divider::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+
   @media (max-width: 780px) {
     .sidebar { position: fixed; inset: 0 20% 0 0; z-index: 20; transform: translateX(-100%); transition: transform .2s ease; }
     .sidebar.open { transform: translateX(0); }
@@ -218,7 +257,7 @@
 <header class="topbar">
   <div class="brand">
     <button class="theme-toggle menu-btn" id="menuBtn" aria-label="Toggle case list">≡</button>
-    <span class="path">~/<b>ctf-writeups</b>/case-files<span class="cursor"></span></span>
+    <button class="path" id="brandBtn" style="background:none;border:none;cursor:pointer;padding:0;color:inherit;font:inherit;">~/<b>ctf-writeups</b>/case-files<span class="cursor"></span></button>
   </div>
   <div class="topbar-actions">
     <button class="theme-toggle" id="themeToggle">light mode</button>
@@ -236,11 +275,7 @@
   </nav>
 
   <main class="reader">
-    <div class="reader-inner" id="readerInner">
-      <div class="empty-state">
-        select a case file from the index<span class="cursor"></span>
-      </div>
-    </div>
+    <div class="reader-inner" id="readerInner"></div>
   </main>
 </div>
 
@@ -250,6 +285,22 @@
 // ============================================================
 const GITHUB_USERNAME = 'YOUR_GITHUB_USERNAME';
 const REPO_NAME = 'YOUR_REPO_NAME';
+
+// Nội dung phần giới thiệu hiện ngay khi vào trang. Sửa các trường bên dưới
+// cho phù hợp với bạn — text ở đây chỉ là placeholder.
+const PROFILE = {
+  name: 'Your Name',
+  role: 'InfoSec student · CTF player · builds things that break things',
+  bio: [
+    'Mình là sinh viên an toàn thông tin, tập trung vào khai thác lỗ hổng, reverse engineering và ứng dụng ML trong bảo mật. Trang này lưu lại các bài writeup sau mỗi giải CTF mình tham gia.',
+    'Mỗi case file bên trái là một bài viết — từ phân tích binary, khai thác web, đến giải mã crypto challenge.'
+  ],
+  skills: ['Web Exploitation', 'Reverse Engineering', 'Cryptography', 'Malware Analysis', 'Python', 'ML for Security'],
+  links: [
+    { label: 'GitHub ↗', url: `https://github.com/${GITHUB_USERNAME}` },
+    { label: 'Email ↗', url: 'mailto:you@example.com' }
+  ]
+};
 
 // Chỉ những issue được tạo bởi các vai trò này mới được render lên trang.
 // Vì Issues trên GitHub public repo mặc định AI CŨNG tạo được, đây là lớp
@@ -319,8 +370,7 @@ async function fetchIssues() {
   const cached = readCache();
   if (cached) {
     posts = cached;
-    renderPostList();
-    if (posts.length) loadPost(posts[0].id); else renderEmptyIndex();
+    posts.length ? renderPostList() : renderEmptyIndex();
     return; // vẫn có thể refresh nền nếu muốn; giữ đơn giản ở đây
   }
 
@@ -343,8 +393,7 @@ async function fetchIssues() {
     );
 
     writeCache(posts);
-    renderPostList();
-    if (posts.length) loadPost(posts[0].id); else renderEmptyIndex();
+    posts.length ? renderPostList() : renderEmptyIndex();
   } catch (err) {
     document.getElementById('bootLog').innerHTML =
       `&gt; connecting to github.com/issues<br>&gt; <span class="err">error: ${err.message ? escapeText(err.message) : 'fetch failed'}</span>`;
@@ -412,6 +461,71 @@ function renderPostList() {
   });
 }
 
+// ---------------- intro (màn hình mở đầu) ----------------
+function renderIntro() {
+  document.querySelectorAll('.post-item').forEach(el => el.classList.remove('active'));
+  document.getElementById('sidebar').classList.remove('open');
+
+  const inner = document.getElementById('readerInner');
+  inner.innerHTML = '';
+
+  const wrap = document.createElement('div');
+  wrap.className = 'intro';
+
+  const eyebrow = document.createElement('div');
+  eyebrow.className = 'intro-eyebrow mono';
+  eyebrow.textContent = 'operator profile';
+
+  const h1 = document.createElement('h1');
+  h1.textContent = PROFILE.name;
+
+  const role = document.createElement('div');
+  role.className = 'role';
+  role.textContent = PROFILE.role;
+
+  const bio = document.createElement('div');
+  bio.className = 'bio';
+  PROFILE.bio.forEach(paragraph => {
+    const p = document.createElement('p');
+    p.textContent = paragraph;
+    bio.appendChild(p);
+  });
+
+  const skillRow = document.createElement('div');
+  skillRow.className = 'skill-row';
+  PROFILE.skills.forEach(skill => {
+    const chip = document.createElement('span');
+    chip.className = 'skill-chip';
+    chip.textContent = skill;
+    skillRow.appendChild(chip);
+  });
+
+  const linkRow = document.createElement('div');
+  linkRow.className = 'link-row';
+  PROFILE.links.forEach(link => {
+    const a = document.createElement('a');
+    a.href = link.url;
+    a.textContent = link.label;
+    if (link.url.startsWith('http')) { a.target = '_blank'; a.rel = 'noopener noreferrer'; }
+    linkRow.appendChild(a);
+  });
+
+  const divider = document.createElement('div');
+  divider.className = 'intro-divider';
+  divider.textContent = `case files (${posts.length || '…'})`;
+
+  wrap.appendChild(eyebrow);
+  wrap.appendChild(h1);
+  wrap.appendChild(role);
+  wrap.appendChild(bio);
+  wrap.appendChild(skillRow);
+  wrap.appendChild(linkRow);
+  wrap.appendChild(divider);
+  inner.appendChild(wrap);
+}
+
+document.getElementById('brandBtn').addEventListener('click', renderIntro);
+
 function loadPost(id) {
   document.querySelectorAll('.post-item').forEach(el => el.classList.remove('active'));
   const activeItem = document.getElementById(`post-${id}`);
@@ -462,6 +576,7 @@ function loadPost(id) {
   inner.appendChild(body);
 }
 
+renderIntro();
 fetchIssues();
 </script>
 </body>
