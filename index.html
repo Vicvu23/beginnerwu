@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Content-Security-Policy: hạn chế nguồn script/style/img chỉ từ những domain cần thiết,
+         giúp giảm thiệt hại nếu vẫn có XSS lọt qua đâu đó -->
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self';
+        script-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com;
+        style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com;
+        img-src 'self' https: data:;
+        connect-src 'self' https://api.github.com;
+        object-src 'none';
+        base-uri 'self';
+    ">
+    <title>CTF Writeups Portfolio</title>
+
+    <!-- Marked.js, Highlight.js, DOMPurify (lọc XSS) -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #f4f4f5; --text-color: #18181b; --nav-bg: #ffffff;
+            --border-color: #e4e4e7; --accent-color: #2563eb; --sidebar-bg: #fafafa;
+        }
+        [data-theme="dark"] {
+            --bg-color: #09090b; --text-color: #f4f4f5; --nav-bg: #18181b;
+            --border-color: #27272a; --accent-color: #3b82f6; --sidebar-bg: #18181b;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-color); height: 100vh; display: flex; flex-direction: column; transition: 0.3s; }
+
+        /* Navbar */
+        nav { display: flex; justify-content: space-between; align-items: center; padding: 1rem 2rem; background-color: var(--nav-bg); border-bottom: 1px solid var(--border-color); }
+        .logo { font-size: 1.25rem; font-weight: bold; }
+        button { padding: 0.5rem 1rem; cursor: pointer; border: 1px solid var(--border-color); border-radius: 4px; background: transparent; color: var(--text-color); }
+
+        /* Layout */
+        .container { display: flex; flex: 1; overflow: hidden; }
+        .sidebar { width: 300px; background-color: var(--sidebar-bg); border-right: 1px solid var(--border-color); overflow-y: auto; padding: 1rem; }
+        .post-item { padding: 1rem; border-bottom: 1px solid var(--border-color); cursor: pointer; border-radius: 4px; }
+        .post-item:hover { background-color: var(--border-color); }
+        .post-item.active { border-left: 4px solid var(--accent-color); font-weight: bold; background-color: var(--border-color); }
+
+        .post-date { font-size: 0.8rem; color: #888; margin-top: 5px; }
+
+        /* Reader */
+        .reader { flex: 1; padding: 2rem 4rem; overflow-y: auto; line-height: 1.6; }
+        .reader h1 { font-size: 2.5rem; margin-bottom: 0.5rem; color: var(--accent-color); }
+
+        /* Markdown Styles */
+        .markdown-body h2, .markdown-body h3 { margin-top: 2rem; margin-bottom: 1rem; }
+        .markdown-body p { margin-bottom: 1rem; }
+        .markdown-body img { max-width: 100%; border-radius: 6px; margin: 1rem 0; }
+        .markdown-body pre { background-color: #282c34; padding: 1rem; border-radius: 6px; overflow-x: auto; margin-bottom: 1rem; }
+        .markdown-body blockquote { border-left: 4px solid var(--accent-color); padding-left: 1rem; margin-bottom: 1rem; opacity: 0.8; }
+
+        #loading { text-align: center; padding: 2rem; font-style: italic; }
+    </style>
+</head>
+<body data-theme="dark">
+
+    <nav>
+        <div class="logo">CTF Writeups</div>
+        <button onclick="toggleTheme()">🌓 Toggle Theme</button>
+    </nav>
+
+    <div class="container">
+        <div class="sidebar" id="post-list">
+            <div id="loading">Loading data from GitHub...</div>
+        </div>
+
+        <div class="reader" id="reader">
+            <h1 id="post-title">Select a writeup</h1>
+            <div id="post-meta" class="post-date"></div>
+            <div id="post-content" class="markdown-body" style="margin-top: 2rem;"></div>
+        </div>
+    </div>
+
+    <script>
+        // --- YOUR GITHUB CONFIGURATION ---
+        const GITHUB_USERNAME = 'YOUR_GITHUB_USERNAME'; // Replace with your GitHub username
+        const REPO_NAME = 'YOUR_REPO_NAME';             // Replace with your repository name
+        // -------------------------------
+
+        // Không cho marked tự ý chèn HTML thô từ nội dung issue.
+        // DOMPurify ở bước render sẽ là lớp lọc chính, nhưng tắt "html" ở đây
+        // giúp giảm bề mặt tấn công thêm một lớp nữa (defense in depth).
+        marked.setOptions({
+            highlight: function(code, lang) {
+                const language = hljs.getLanguage(lang) ? lang : 'plaintext';
+                return hljs.highlight(code, { language }).value;
+            },
+            breaks: true,
+            headerIds: false,   // tránh id trùng/độc do người dùng tạo tiêu đề tùy ý
+            mangle: false
+        });
+
+        // Cấu hình DOMPurify: cho phép mở link ở tab mới nhưng luôn kèm rel an toàn,
+        // chặn các thẻ/attribute có thể dùng để chạy script (script, iframe, onerror, ...)
+        DOMPurify.addHook('afterSanitizeAttributes', function (node) {
+            if (node.tagName === 'A') {
+                node.setAttribute('target', '_blank');
+                node.setAttribute('rel', 'noopener noreferrer nofollow');
+            }
+        });
+
+        function sanitizeHtml(rawHtml) {
+            return DOMPurify.sanitize(rawHtml, {
+                ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i,
+                FORBID_TAGS: ['style', 'script', 'iframe', 'object', 'embed', 'form'],
+                FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover']
+            });
+        }
+
+        let posts = [];
+
+        function toggleTheme() {
+            const body = document.body;
+            body.setAttribute('data-theme', body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+        }
+
+        async function fetchIssues() {
+            // Fetch open issues with the "writeup" label
+            const url = `https://api.github.com/repos/${encodeURIComponent(GITHUB_USERNAME)}/${encodeURIComponent(REPO_NAME)}/issues?labels=writeup&state=open`;
+
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`GitHub API returned ${response.status}`);
+                }
+                const data = await response.json();
+
+                // Phòng trường hợp API trả lỗi dạng object (vd. rate limit) thay vì mảng
+                posts = Array.isArray(data) ? data : [];
+
+                renderPostList();
+
+                if (posts.length > 0) {
+                    loadPost(posts[0].id);
+                } else {
+                    document.getElementById('loading').innerText = "No writeups found. Please create an Issue on GitHub!";
+                }
+            } catch (error) {
+                document.getElementById('loading').innerText = "Error loading data!";
+                console.error(error);
+            }
+        }
+
+        function renderPostList() {
+            const list = document.getElementById('post-list');
+            list.innerHTML = '';
+
+            posts.forEach(post => {
+                const div = document.createElement('div');
+                div.className = 'post-item';
+                div.id = `post-${post.id}`;
+                div.onclick = () => loadPost(post.id);
+
+                const date = new Date(post.created_at).toLocaleDateString('en-US');
+
+                // Dùng textContent / DOM API thay vì innerHTML với chuỗi ghép nối,
+                // để title (do người tạo issue đặt) không thể chèn thẻ HTML.
+                const titleDiv = document.createElement('div');
+                titleDiv.textContent = post.title || '(untitled)';
+
+                const dateDiv = document.createElement('div');
+                dateDiv.className = 'post-date';
+                dateDiv.textContent = date;
+
+                div.appendChild(titleDiv);
+                div.appendChild(dateDiv);
+                list.appendChild(div);
+            });
+        }
+
+        function loadPost(id) {
+            document.querySelectorAll('.post-item').forEach(el => el.classList.remove('active'));
+            const activeItem = document.getElementById(`post-${id}`);
+            if (activeItem) activeItem.classList.add('active');
+
+            const post = posts.find(p => p.id === id);
+            if (post) {
+                // title/date: dùng textContent (an toàn tuyệt đối với XSS)
+                document.getElementById('post-title').textContent = post.title || '(untitled)';
+                document.getElementById('post-meta').textContent = `Posted on: ${new Date(post.created_at).toLocaleDateString('en-US')}`;
+
+                // Nội dung issue: markdown -> HTML -> LỌC QUA DOMPurify trước khi render.
+                // Đây là bước quan trọng nhất để chặn XSS lưu trữ từ nội dung issue.
+                const rawHtml = marked.parse(post.body || '*No content*');
+                document.getElementById('post-content').innerHTML = sanitizeHtml(rawHtml);
+            }
+        }
+
+        fetchIssues();
+    </script>
+</body>
+</html>
