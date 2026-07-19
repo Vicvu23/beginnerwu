@@ -1,202 +1,468 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Content-Security-Policy: hạn chế nguồn script/style/img chỉ từ những domain cần thiết,
-         giúp giảm thiệt hại nếu vẫn có XSS lọt qua đâu đó -->
-    <meta http-equiv="Content-Security-Policy" content="
-        default-src 'self';
-        script-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com;
-        style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com;
-        img-src 'self' https: data:;
-        connect-src 'self' https://api.github.com;
-        object-src 'none';
-        base-uri 'self';
-    ">
-    <title>CTF Writeups Portfolio</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="
+    default-src 'self';
+    script-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com;
+    style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com;
+    font-src https://fonts.gstatic.com;
+    img-src 'self' https: data:;
+    connect-src 'self' https://api.github.com;
+    object-src 'none';
+    base-uri 'self';
+">
+<title>case files // CTF writeups</title>
 
-    <!-- Marked.js, Highlight.js, DOMPurify (lọc XSS) -->
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 
-    <style>
-        :root {
-            --bg-color: #f4f4f5; --text-color: #18181b; --nav-bg: #ffffff;
-            --border-color: #e4e4e7; --accent-color: #2563eb; --sidebar-bg: #fafafa;
-        }
-        [data-theme="dark"] {
-            --bg-color: #09090b; --text-color: #f4f4f5; --nav-bg: #18181b;
-            --border-color: #27272a; --accent-color: #3b82f6; --sidebar-bg: #18181b;
-        }
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
-        body { background-color: var(--bg-color); color: var(--text-color); height: 100vh; display: flex; flex-direction: column; transition: 0.3s; }
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
 
-        /* Navbar */
-        nav { display: flex; justify-content: space-between; align-items: center; padding: 1rem 2rem; background-color: var(--nav-bg); border-bottom: 1px solid var(--border-color); }
-        .logo { font-size: 1.25rem; font-weight: bold; }
-        button { padding: 0.5rem 1rem; cursor: pointer; border: 1px solid var(--border-color); border-radius: 4px; background: transparent; color: var(--text-color); }
+<style>
+  /* ---------------------------------------------------------
+     TOKENS
+     signal  = terminal-amber accent, the one bright thing on the page
+     ink     = dark mode surfaces, paper = light mode surfaces
+  --------------------------------------------------------- */
+  :root {
+    --ink:        #0a0c0f;
+    --ink-raised: #12151a;
+    --ink-line:   #22262c;
+    --paper:      #eef1ef;
+    --paper-raised: #ffffff;
+    --paper-line: #d7dcd9;
+    --signal:     #ffb454;
+    --signal-dim: #8a5f2b;
+    --text:       #e7e9ea;
+    --text-dim:   #8b9199;
+    --cat-web:    #5aa2ff;
+    --cat-pwn:    #ff5a5a;
+    --cat-crypto: #b98bff;
+    --cat-forensics: #4fd1a5;
+    --cat-rev:    #ffd25a;
+    --cat-misc:   #9aa3ab;
 
-        /* Layout */
-        .container { display: flex; flex: 1; overflow: hidden; }
-        .sidebar { width: 300px; background-color: var(--sidebar-bg); border-right: 1px solid var(--border-color); overflow-y: auto; padding: 1rem; }
-        .post-item { padding: 1rem; border-bottom: 1px solid var(--border-color); cursor: pointer; border-radius: 4px; }
-        .post-item:hover { background-color: var(--border-color); }
-        .post-item.active { border-left: 4px solid var(--accent-color); font-weight: bold; background-color: var(--border-color); }
+    --bg: var(--ink);
+    --surface: var(--ink-raised);
+    --line: var(--ink-line);
+    --fg: var(--text);
+    --fg-dim: var(--text-dim);
+  }
+  [data-theme="light"] {
+    --bg: var(--paper);
+    --surface: var(--paper-raised);
+    --line: var(--paper-line);
+    --fg: #14171a;
+    --fg-dim: #5b6167;
+    --signal-dim: #c98a3a;
+  }
 
-        .post-date { font-size: 0.8rem; color: #888; margin-top: 5px; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { -webkit-font-smoothing: antialiased; }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    font-family: 'IBM Plex Sans', sans-serif;
+    transition: background .25s ease, color .25s ease;
+  }
+  .mono { font-family: 'IBM Plex Mono', monospace; }
 
-        /* Reader */
-        .reader { flex: 1; padding: 2rem 4rem; overflow-y: auto; line-height: 1.6; }
-        .reader h1 { font-size: 2.5rem; margin-bottom: 0.5rem; color: var(--accent-color); }
+  ::selection { background: var(--signal); color: #14171a; }
+  :focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
 
-        /* Markdown Styles */
-        .markdown-body h2, .markdown-body h3 { margin-top: 2rem; margin-bottom: 1rem; }
-        .markdown-body p { margin-bottom: 1rem; }
-        .markdown-body img { max-width: 100%; border-radius: 6px; margin: 1rem 0; }
-        .markdown-body pre { background-color: #282c34; padding: 1rem; border-radius: 6px; overflow-x: auto; margin-bottom: 1rem; }
-        .markdown-body blockquote { border-left: 4px solid var(--accent-color); padding-left: 1rem; margin-bottom: 1rem; opacity: 0.8; }
+  /* ---------------------------------------------------------
+     TOP BAR
+  --------------------------------------------------------- */
+  header.topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0.9rem 1.5rem;
+    border-bottom: 1px solid var(--line);
+    background: var(--surface);
+  }
+  .brand { display: flex; align-items: baseline; gap: .5rem; }
+  .brand .path { font-family: 'IBM Plex Mono', monospace; font-size: .95rem; color: var(--fg-dim); }
+  .brand .path b { color: var(--fg); font-weight: 600; }
+  .cursor {
+    display: inline-block; width: 8px; height: 1.05rem; background: var(--signal);
+    animation: blink 1.1s steps(1) infinite; vertical-align: -3px;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
 
-        #loading { text-align: center; padding: 2rem; font-style: italic; }
-    </style>
+  .topbar-actions { display: flex; align-items: center; gap: .6rem; }
+  .theme-toggle {
+    font-family: 'IBM Plex Mono', monospace; font-size: .78rem; letter-spacing: .04em;
+    padding: .45rem .8rem; border-radius: 3px; border: 1px solid var(--line);
+    background: transparent; color: var(--fg-dim); cursor: pointer;
+    text-transform: uppercase;
+  }
+  .theme-toggle:hover { color: var(--signal); border-color: var(--signal-dim); }
+
+  /* ---------------------------------------------------------
+     LAYOUT
+  --------------------------------------------------------- */
+  .container { display: flex; flex: 1; overflow: hidden; }
+
+  .sidebar {
+    width: 320px; flex-shrink: 0;
+    background: var(--surface);
+    border-right: 1px solid var(--line);
+    overflow-y: auto;
+  }
+  .sidebar-head {
+    padding: .9rem 1.1rem .6rem; font-family: 'IBM Plex Mono', monospace;
+    font-size: .7rem; letter-spacing: .12em; text-transform: uppercase; color: var(--fg-dim);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .post-item {
+    display: block; width: 100%; text-align: left;
+    padding: .9rem 1.1rem; border-bottom: 1px solid var(--line);
+    cursor: pointer; background: transparent; border-left: 3px solid transparent;
+    transition: background .15s ease, border-color .15s ease;
+  }
+  .post-item:hover { background: color-mix(in srgb, var(--signal) 6%, transparent); }
+  .post-item.active { border-left-color: var(--signal); background: color-mix(in srgb, var(--signal) 9%, transparent); }
+
+  .post-item-top { display: flex; align-items: center; gap: .5rem; margin-bottom: .4rem; }
+  .tag {
+    font-family: 'IBM Plex Mono', monospace; font-size: .64rem; letter-spacing: .06em;
+    padding: .12rem .45rem; border-radius: 2px; text-transform: uppercase; font-weight: 600;
+    border: 1px solid currentColor;
+  }
+  .post-item-title { font-size: .92rem; font-weight: 500; line-height: 1.35; color: var(--fg); }
+  .post-date { font-family: 'IBM Plex Mono', monospace; font-size: .72rem; color: var(--fg-dim); margin-top: .35rem; }
+
+  /* ---------------------------------------------------------
+     READER
+  --------------------------------------------------------- */
+  .reader { flex: 1; overflow-y: auto; }
+  .reader-inner { max-width: 780px; margin: 0 auto; padding: 3rem 2rem 6rem; }
+
+  .case-meta { display: flex; align-items: center; gap: .7rem; margin-bottom: 1rem; flex-wrap: wrap; }
+  .case-no { font-family: 'IBM Plex Mono', monospace; font-size: .75rem; color: var(--fg-dim); letter-spacing: .06em; }
+
+  .reader h1 {
+    font-family: 'IBM Plex Mono', monospace; font-size: 2.1rem; font-weight: 700;
+    letter-spacing: -.01em; line-height: 1.2; margin-bottom: .6rem; color: var(--fg);
+  }
+  #post-meta { font-family: 'IBM Plex Mono', monospace; font-size: .8rem; color: var(--fg-dim); margin-bottom: 2rem; }
+
+  /* the signature element: a stamped case tag next to the title */
+  .stamp {
+    display: inline-flex; align-items: center; gap: .4rem;
+    font-family: 'IBM Plex Mono', monospace; font-size: .68rem; font-weight: 700;
+    letter-spacing: .1em; text-transform: uppercase;
+    padding: .3rem .6rem; border: 1.5px solid var(--signal); color: var(--signal);
+    border-radius: 2px; transform: rotate(-2deg);
+    mix-blend-mode: var(--stamp-blend, normal);
+  }
+
+  .markdown-body { line-height: 1.75; font-size: 1rem; }
+  .markdown-body h2 { font-family: 'IBM Plex Mono', monospace; font-size: 1.3rem; margin: 2.2rem 0 1rem; padding-top: 1.4rem; border-top: 1px solid var(--line); }
+  .markdown-body h3 { font-family: 'IBM Plex Mono', monospace; font-size: 1.05rem; margin: 1.8rem 0 .8rem; color: var(--signal); }
+  .markdown-body p { margin-bottom: 1.1rem; color: var(--fg); }
+  .markdown-body a { color: var(--signal); text-decoration: underline; text-underline-offset: 2px; }
+  .markdown-body img { max-width: 100%; border-radius: 4px; margin: 1.2rem 0; border: 1px solid var(--line); }
+  .markdown-body pre {
+    background: #14171c; border: 1px solid var(--line); padding: 1rem 1.1rem; border-radius: 4px;
+    overflow-x: auto; margin-bottom: 1.2rem; font-size: .86rem;
+  }
+  .markdown-body code { font-family: 'IBM Plex Mono', monospace; }
+  .markdown-body :not(pre) > code {
+    background: color-mix(in srgb, var(--signal) 12%, transparent); color: var(--signal);
+    padding: .1rem .35rem; border-radius: 3px; font-size: .88em;
+  }
+  .markdown-body blockquote { border-left: 3px solid var(--signal); padding-left: 1rem; margin-bottom: 1.1rem; color: var(--fg-dim); }
+  .markdown-body ul, .markdown-body ol { margin: 0 0 1.1rem 1.3rem; }
+  .markdown-body li { margin-bottom: .4rem; }
+  .markdown-body table { border-collapse: collapse; width: 100%; margin-bottom: 1.2rem; font-size: .9rem; }
+  .markdown-body th, .markdown-body td { border: 1px solid var(--line); padding: .5rem .7rem; text-align: left; }
+  .markdown-body th { font-family: 'IBM Plex Mono', monospace; background: var(--surface); }
+
+  /* ---------------------------------------------------------
+     TERMINAL-STYLE LOADING / EMPTY STATES
+  --------------------------------------------------------- */
+  .boot-log { font-family: 'IBM Plex Mono', monospace; font-size: .82rem; color: var(--fg-dim); padding: 1.5rem 1.1rem; line-height: 1.9; }
+  .boot-log .ok { color: var(--cat-forensics); }
+  .boot-log .err { color: var(--cat-pwn); }
+
+  .empty-state { padding: 3rem 2rem; font-family: 'IBM Plex Mono', monospace; color: var(--fg-dim); font-size: .9rem; line-height: 1.8; }
+  .empty-state .cursor { margin-left: 2px; }
+
+  @media (max-width: 780px) {
+    .sidebar { position: fixed; inset: 0 20% 0 0; z-index: 20; transform: translateX(-100%); transition: transform .2s ease; }
+    .sidebar.open { transform: translateX(0); }
+    .menu-btn { display: inline-flex; }
+    .reader-inner { padding: 2rem 1.2rem 4rem; }
+    .reader h1 { font-size: 1.6rem; }
+  }
+  .menu-btn { display: none; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cursor { animation: none; opacity: 1; }
+    * { transition: none !important; }
+  }
+</style>
 </head>
 <body data-theme="dark">
 
-    <nav>
-        <div class="logo">CTF Writeups</div>
-        <button onclick="toggleTheme()">🌓 Toggle Theme</button>
-    </nav>
+<header class="topbar">
+  <div class="brand">
+    <button class="theme-toggle menu-btn" id="menuBtn" aria-label="Toggle case list">≡</button>
+    <span class="path">~/<b>ctf-writeups</b>/case-files<span class="cursor"></span></span>
+  </div>
+  <div class="topbar-actions">
+    <button class="theme-toggle" id="themeToggle">light mode</button>
+  </div>
+</header>
 
-    <div class="container">
-        <div class="sidebar" id="post-list">
-            <div id="loading">Loading data from GitHub...</div>
-        </div>
-
-        <div class="reader" id="reader">
-            <h1 id="post-title">Select a writeup</h1>
-            <div id="post-meta" class="post-date"></div>
-            <div id="post-content" class="markdown-body" style="margin-top: 2rem;"></div>
-        </div>
+<div class="container">
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-head">case index</div>
+    <div id="post-list">
+      <div class="boot-log" id="bootLog">
+        &gt; connecting to github.com/issues<span class="cursor"></span>
+      </div>
     </div>
+  </nav>
 
-    <script>
-        // --- YOUR GITHUB CONFIGURATION ---
-        const GITHUB_USERNAME = 'YOUR_GITHUB_USERNAME'; // Replace with your GitHub username
-        const REPO_NAME = 'YOUR_REPO_NAME';             // Replace with your repository name
-        // -------------------------------
+  <main class="reader">
+    <div class="reader-inner" id="readerInner">
+      <div class="empty-state">
+        select a case file from the index<span class="cursor"></span>
+      </div>
+    </div>
+  </main>
+</div>
 
-        // Không cho marked tự ý chèn HTML thô từ nội dung issue.
-        // DOMPurify ở bước render sẽ là lớp lọc chính, nhưng tắt "html" ở đây
-        // giúp giảm bề mặt tấn công thêm một lớp nữa (defense in depth).
-        marked.setOptions({
-            highlight: function(code, lang) {
-                const language = hljs.getLanguage(lang) ? lang : 'plaintext';
-                return hljs.highlight(code, { language }).value;
-            },
-            breaks: true,
-            headerIds: false,   // tránh id trùng/độc do người dùng tạo tiêu đề tùy ý
-            mangle: false
-        });
+<script>
+// ============================================================
+// CONFIG
+// ============================================================
+const GITHUB_USERNAME = 'YOUR_GITHUB_USERNAME';
+const REPO_NAME = 'YOUR_REPO_NAME';
 
-        // Cấu hình DOMPurify: cho phép mở link ở tab mới nhưng luôn kèm rel an toàn,
-        // chặn các thẻ/attribute có thể dùng để chạy script (script, iframe, onerror, ...)
-        DOMPurify.addHook('afterSanitizeAttributes', function (node) {
-            if (node.tagName === 'A') {
-                node.setAttribute('target', '_blank');
-                node.setAttribute('rel', 'noopener noreferrer nofollow');
-            }
-        });
+// Chỉ những issue được tạo bởi các vai trò này mới được render lên trang.
+// Vì Issues trên GitHub public repo mặc định AI CŨNG tạo được, đây là lớp
+// lọc quan trọng nhất phù hợp với cơ chế của GitHub: field author_association
+// do chính GitHub tính toán phía server, người dùng không giả mạo được.
+const ALLOWED_AUTHOR_ASSOCIATIONS = ['OWNER', 'MEMBER', 'COLLABORATOR'];
 
-        function sanitizeHtml(rawHtml) {
-            return DOMPurify.sanitize(rawHtml, {
-                ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i,
-                FORBID_TAGS: ['style', 'script', 'iframe', 'object', 'embed', 'form'],
-                FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover']
-            });
-        }
+// Cache nhẹ để giảm số lần gọi GitHub API (giới hạn 60 req/giờ cho request
+// không xác thực) — tránh trang bị "đơ" khi nhiều người xem cùng lúc.
+const CACHE_KEY = 'ctf-writeups-cache-v1';
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 phút
 
-        let posts = [];
+const CATEGORY_COLORS = {
+  web: 'var(--cat-web)', pwn: 'var(--cat-pwn)', crypto: 'var(--cat-crypto)',
+  forensics: 'var(--cat-forensics)', rev: 'var(--cat-rev)', reverse: 'var(--cat-rev)',
+  misc: 'var(--cat-misc)'
+};
 
-        function toggleTheme() {
-            const body = document.body;
-            body.setAttribute('data-theme', body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
-        }
+marked.setOptions({
+  highlight: (code, lang) => {
+    const language = hljs.getLanguage(lang) ? lang : 'plaintext';
+    return hljs.highlight(code, { language }).value;
+  },
+  breaks: true,
+  headerIds: false,
+  mangle: false
+});
 
-        async function fetchIssues() {
-            // Fetch open issues with the "writeup" label
-            const url = `https://api.github.com/repos/${encodeURIComponent(GITHUB_USERNAME)}/${encodeURIComponent(REPO_NAME)}/issues?labels=writeup&state=open`;
+DOMPurify.addHook('afterSanitizeAttributes', (node) => {
+  if (node.tagName === 'A') {
+    node.setAttribute('target', '_blank');
+    node.setAttribute('rel', 'noopener noreferrer nofollow');
+  }
+});
 
-            try {
-                const response = await fetch(url);
-                if (!response.ok) {
-                    throw new Error(`GitHub API returned ${response.status}`);
-                }
-                const data = await response.json();
+function sanitizeHtml(rawHtml) {
+  return DOMPurify.sanitize(rawHtml, {
+    FORBID_TAGS: ['style', 'script', 'iframe', 'object', 'embed', 'form'],
+    FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover']
+  });
+}
 
-                // Phòng trường hợp API trả lỗi dạng object (vd. rate limit) thay vì mảng
-                posts = Array.isArray(data) ? data : [];
+let posts = [];
 
-                renderPostList();
+// ---------------- theme ----------------
+function applyTheme(mode) {
+  document.body.setAttribute('data-theme', mode);
+  document.getElementById('themeToggle').textContent = mode === 'dark' ? 'light mode' : 'dark mode';
+}
+document.getElementById('themeToggle').addEventListener('click', () => {
+  const next = document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  applyTheme(next);
+});
+document.getElementById('menuBtn').addEventListener('click', () => {
+  document.getElementById('sidebar').classList.toggle('open');
+});
 
-                if (posts.length > 0) {
-                    loadPost(posts[0].id);
-                } else {
-                    document.getElementById('loading').innerText = "No writeups found. Please create an Issue on GitHub!";
-                }
-            } catch (error) {
-                document.getElementById('loading').innerText = "Error loading data!";
-                console.error(error);
-            }
-        }
+// ---------------- category helper ----------------
+function getCategory(post) {
+  const labels = (post.labels || []).map(l => (typeof l === 'string' ? l : l.name || '').toLowerCase());
+  const found = labels.find(l => CATEGORY_COLORS[l]);
+  return found || 'misc';
+}
 
-        function renderPostList() {
-            const list = document.getElementById('post-list');
-            list.innerHTML = '';
+// ---------------- fetch + security filtering ----------------
+async function fetchIssues() {
+  const cached = readCache();
+  if (cached) {
+    posts = cached;
+    renderPostList();
+    if (posts.length) loadPost(posts[0].id); else renderEmptyIndex();
+    return; // vẫn có thể refresh nền nếu muốn; giữ đơn giản ở đây
+  }
 
-            posts.forEach(post => {
-                const div = document.createElement('div');
-                div.className = 'post-item';
-                div.id = `post-${post.id}`;
-                div.onclick = () => loadPost(post.id);
+  const url = `https://api.github.com/repos/${encodeURIComponent(GITHUB_USERNAME)}/${encodeURIComponent(REPO_NAME)}/issues?labels=writeup&state=open&per_page=100`;
 
-                const date = new Date(post.created_at).toLocaleDateString('en-US');
+  try {
+    const res = await fetch(url, { headers: { 'Accept': 'application/vnd.github+json' } });
+    if (!res.ok) throw new Error(`GitHub API ${res.status}`);
+    const data = await res.json();
+    const rawList = Array.isArray(data) ? data : [];
 
-                // Dùng textContent / DOM API thay vì innerHTML với chuỗi ghép nối,
-                // để title (do người tạo issue đặt) không thể chèn thẻ HTML.
-                const titleDiv = document.createElement('div');
-                titleDiv.textContent = post.title || '(untitled)';
+    // Lọc theo cơ chế GitHub issues:
+    // 1) bỏ pull request (endpoint /issues trả về cả PR)
+    // 2) chỉ giữ issue do owner/member/collaborator tạo — chặn issue rác/độc
+    //    hại do người ngoài (public) tự tạo trên repo public, dù có gắn được
+    //    label "writeup" hay không.
+    posts = rawList.filter(item =>
+      !item.pull_request &&
+      ALLOWED_AUTHOR_ASSOCIATIONS.includes(item.author_association)
+    );
 
-                const dateDiv = document.createElement('div');
-                dateDiv.className = 'post-date';
-                dateDiv.textContent = date;
+    writeCache(posts);
+    renderPostList();
+    if (posts.length) loadPost(posts[0].id); else renderEmptyIndex();
+  } catch (err) {
+    document.getElementById('bootLog').innerHTML =
+      `&gt; connecting to github.com/issues<br>&gt; <span class="err">error: ${err.message ? escapeText(err.message) : 'fetch failed'}</span>`;
+    console.error(err);
+  }
+}
 
-                div.appendChild(titleDiv);
-                div.appendChild(dateDiv);
-                list.appendChild(div);
-            });
-        }
+function readCache() {
+  try {
+    const raw = sessionStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const { ts, data } = JSON.parse(raw);
+    if (Date.now() - ts > CACHE_TTL_MS) return null;
+    return data;
+  } catch { return null; }
+}
+function writeCache(data) {
+  try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data })); } catch {}
+}
+function escapeText(str) {
+  const d = document.createElement('div'); d.textContent = str; return d.innerHTML;
+}
 
-        function loadPost(id) {
-            document.querySelectorAll('.post-item').forEach(el => el.classList.remove('active'));
-            const activeItem = document.getElementById(`post-${id}`);
-            if (activeItem) activeItem.classList.add('active');
+// ---------------- render ----------------
+function renderEmptyIndex() {
+  document.getElementById('post-list').innerHTML =
+    `<div class="boot-log"><span class="ok">&gt; connected</span><br>&gt; 0 verified case files found<br>&gt; create a labeled issue as owner/collaborator to publish one</div>`;
+}
 
-            const post = posts.find(p => p.id === id);
-            if (post) {
-                // title/date: dùng textContent (an toàn tuyệt đối với XSS)
-                document.getElementById('post-title').textContent = post.title || '(untitled)';
-                document.getElementById('post-meta').textContent = `Posted on: ${new Date(post.created_at).toLocaleDateString('en-US')}`;
+function renderPostList() {
+  const list = document.getElementById('post-list');
+  list.innerHTML = '';
 
-                // Nội dung issue: markdown -> HTML -> LỌC QUA DOMPurify trước khi render.
-                // Đây là bước quan trọng nhất để chặn XSS lưu trữ từ nội dung issue.
-                const rawHtml = marked.parse(post.body || '*No content*');
-                document.getElementById('post-content').innerHTML = sanitizeHtml(rawHtml);
-            }
-        }
+  posts.forEach(post => {
+    const cat = getCategory(post);
+    const color = CATEGORY_COLORS[cat] || CATEGORY_COLORS.misc;
+    const date = new Date(post.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 
-        fetchIssues();
-    </script>
+    const btn = document.createElement('button');
+    btn.className = 'post-item';
+    btn.id = `post-${post.id}`;
+    btn.type = 'button';
+    btn.addEventListener('click', () => loadPost(post.id));
+
+    const top = document.createElement('div');
+    top.className = 'post-item-top';
+    const tag = document.createElement('span');
+    tag.className = 'tag mono';
+    tag.style.color = color;
+    tag.textContent = cat;
+    top.appendChild(tag);
+
+    const title = document.createElement('div');
+    title.className = 'post-item-title';
+    title.textContent = post.title || '(untitled)';
+
+    const dateEl = document.createElement('div');
+    dateEl.className = 'post-date';
+    dateEl.textContent = date;
+
+    btn.appendChild(top);
+    btn.appendChild(title);
+    btn.appendChild(dateEl);
+    list.appendChild(btn);
+  });
+}
+
+function loadPost(id) {
+  document.querySelectorAll('.post-item').forEach(el => el.classList.remove('active'));
+  const activeItem = document.getElementById(`post-${id}`);
+  if (activeItem) activeItem.classList.add('active');
+  document.getElementById('sidebar').classList.remove('open');
+
+  const post = posts.find(p => p.id === id);
+  if (!post) return;
+
+  const cat = getCategory(post);
+  const color = CATEGORY_COLORS[cat] || CATEGORY_COLORS.misc;
+  const idx = posts.findIndex(p => p.id === id) + 1;
+  const date = new Date(post.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+  const rawHtml = marked.parse(post.body || '*No content provided for this case.*');
+  const safeHtml = sanitizeHtml(rawHtml);
+
+  const inner = document.getElementById('readerInner');
+  inner.innerHTML = '';
+
+  const metaRow = document.createElement('div');
+  metaRow.className = 'case-meta';
+  const caseNo = document.createElement('span');
+  caseNo.className = 'case-no mono';
+  caseNo.textContent = `CASE No. ${String(idx).padStart(3, '0')}`;
+  const stamp = document.createElement('span');
+  stamp.className = 'stamp';
+  stamp.style.setProperty('--stamp-blend', document.body.getAttribute('data-theme') === 'dark' ? 'normal' : 'multiply');
+  stamp.style.color = color; stamp.style.borderColor = color;
+  stamp.textContent = cat;
+  metaRow.appendChild(caseNo);
+  metaRow.appendChild(stamp);
+
+  const h1 = document.createElement('h1');
+  h1.textContent = post.title || '(untitled)';
+
+  const metaLine = document.createElement('div');
+  metaLine.id = 'post-meta';
+  metaLine.textContent = `filed ${date} · verified author`;
+
+  const body = document.createElement('div');
+  body.className = 'markdown-body';
+  body.innerHTML = safeHtml;
+
+  inner.appendChild(metaRow);
+  inner.appendChild(h1);
+  inner.appendChild(metaLine);
+  inner.appendChild(body);
+}
+
+fetchIssues();
+</script>
 </body>
 </html>
