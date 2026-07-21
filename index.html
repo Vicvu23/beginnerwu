@@ -5,7 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>D4z2 | CTF Writeups</title>
 
-    <!-- Google Fonts: Inter -->
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="favicon.png">
+
+    <!-- Google Fonts: Inter & JetBrains Mono -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -39,6 +42,8 @@
             font-family: 'Inter', sans-serif;
             line-height: 1.6;
             -webkit-font-smoothing: antialiased;
+            /* Đảm bảo nội dung không bị che khuất bởi background */
+            position: relative;
         }
 
         .mono { font-family: 'JetBrains Mono', monospace; }
@@ -48,6 +53,8 @@
             max-width: 900px;
             margin: 0 auto;
             padding: 2rem 1.5rem;
+            position: relative;
+            z-index: 1; /* Nổi lên trên mạng nhện */
         }
 
         /* --- HERO SECTION --- */
@@ -58,6 +65,7 @@
             padding: 3rem 2.5rem;
             margin-top: 2rem;
             margin-bottom: 3rem;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
         }
 
         .hero h1 {
@@ -106,6 +114,16 @@
             transform: translateY(-2px);
         }
 
+        .btn-outline {
+            background-color: transparent;
+            color: var(--text-main);
+            border: 1px solid var(--border);
+        }
+
+        .btn-outline:hover {
+            background-color: var(--border);
+        }
+
         /* --- WRITEUP LIST --- */
         .section-title {
             font-size: 1.5rem;
@@ -145,7 +163,6 @@
             padding: 0.25rem 0.6rem;
             border-radius: 4px;
             font-weight: 700;
-            margin-bottom: 1rem;
             background: rgba(45, 212, 191, 0.1);
             color: var(--accent);
         }
@@ -167,6 +184,11 @@
         #reader-view {
             display: none;
             animation: fadeIn 0.3s ease;
+            background: var(--bg-surface);
+            padding: 2.5rem;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
         }
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -188,7 +210,7 @@
 
         .reader-header { margin-bottom: 3rem; border-bottom: 1px solid var(--border); padding-bottom: 2rem; }
         .reader-title { font-size: 2.5rem; font-weight: 800; margin-bottom: 1rem; line-height: 1.2; }
-        .reader-meta { color: var(--text-muted); font-size: 0.95rem; }
+        .reader-meta { color: var(--text-muted); font-size: 0.95rem; display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
 
         /* Markdown Styles */
         .markdown-body { font-size: 1.1rem; line-height: 1.8; color: #d4d4d8; }
@@ -211,6 +233,9 @@
     </style>
 </head>
 <body>
+
+    <!-- Khung chứa mạng nhện (Background) -->
+    <div id="particles-js" style="position: fixed; width: 100%; height: 100%; top: 0; left: 0; z-index: -1;"></div>
 
     <div class="container">
         
@@ -258,6 +283,7 @@
 
     </div>
 
+    <!-- CÁC SCRIPT XỬ LÝ LOGIC -->
     <script>
         // ==========================================
         // CẤU HÌNH GITHUB
@@ -287,7 +313,8 @@
         // FETCH DỮ LIỆU TỪ GITHUB ISSUES
         // ==========================================
         async function fetchIssues() {
-            const url = `https://api.github.com/repos/${encodeURIComponent(GITHUB_USERNAME)}/${encodeURIComponent(REPO_NAME)}/issues?labels=writeup&state=open&per_page=100&_t=${Date.now()}`;
+            // Dùng Date.now() để luôn lấy bài mới, chống cache
+            const url = `https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/issues?labels=writeup&state=open&per_page=100&_t=${Date.now()}`;
             const listEl = document.getElementById('post-list');
 
             try {
@@ -315,21 +342,98 @@
         }
 
         // ==========================================
-        // RENDER DANH SÁCH BÀI VIẾT
+        // TẢI VÀ HIỂN THỊ COMMENT CHO BÀI VIẾT
+        // ==========================================
+        async function fetchComments(issueNumber, container, issueUrl) {
+            container.innerHTML = '<div class="status-msg"><i class="fa-solid fa-circle-notch fa-spin"></i> Loading comments...</div>';
+            
+            try {
+                const res = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/issues/${issueNumber}/comments?_t=${Date.now()}`);
+                const comments = await res.json();
+                
+                let html = `
+                <div style="margin-top: 4rem; border-top: 1px solid var(--border); padding-top: 2rem;">
+                    <h3 style="margin-bottom: 1.5rem; color: var(--text-main);">
+                        <i class="fa-regular fa-comments"></i> Comments (${comments.length})
+                    </h3>`;
+                
+                if (comments.length > 0) {
+                    comments.forEach(c => {
+                        const date = new Date(c.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+                        const safeBody = DOMPurify.sanitize(marked.parse(c.body));
+                        
+                        html += `
+                        <div style="margin-bottom: 1.5rem; padding: 1.25rem; background: var(--bg-base); border: 1px solid var(--border); border-radius: 8px;">
+                            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+                                <img src="${c.user.avatar_url}" style="width: 32px; height: 32px; border-radius: 50%;">
+                                <div>
+                                    <strong style="color: var(--accent);">${c.user.login}</strong>
+                                    <span style="color: var(--text-muted); font-size: 0.85rem; margin-left: 0.5rem;">${date}</span>
+                                </div>
+                            </div>
+                            <div class="markdown-body" style="font-size: 0.95rem;">${safeBody}</div>
+                        </div>`;
+                    });
+                } else {
+                    html += `<p style="color: var(--text-muted); margin-bottom: 1.5rem;">No comments yet. Be the first to share your thoughts!</p>`;
+                }
+
+                html += `
+                    <div style="margin-top: 2rem;">
+                        <a href="${issueUrl}" target="_blank" class="btn btn-outline" style="text-decoration: none;">
+                            <i class="fa-brands fa-github" style="margin-right: 0.5rem;"></i> Post a Comment via GitHub
+                        </a>
+                    </div>
+                </div>`;
+                
+                container.innerHTML = html;
+            } catch (err) {
+                container.innerHTML = `<p style="color: #ef4444;">Failed to load comments.</p>`;
+                console.error("Error fetching comments:", err);
+            }
+        }
+
+        // ==========================================
+        // XỬ LÝ LABELS & STARS
         // ==========================================
         function getCategory(post) {
-            const labels = (post.labels || []).map(l => (typeof l === 'string' ? l : l.name || ''));
-            // Bỏ label 'writeup' đi để lấy mảng chính (Pwn, Rev, Web...)
-            const specificLabels = labels.filter(l => l.toLowerCase() !== 'writeup');
+            const labels = (post.labels || []).map(l => (typeof l === 'string' ? l : l.name || '').toLowerCase());
+            const specificLabels = labels.filter(l => l !== 'writeup' && !l.startsWith('star:'));
             return specificLabels.length > 0 ? specificLabels[0] : 'CTF';
         }
 
+        function getRating(post) {
+            const labels = (post.labels || []).map(l => (typeof l === 'string' ? l : l.name || '').toLowerCase());
+            const starLabel = labels.find(l => l.startsWith('star:'));
+            if (starLabel) {
+                return parseInt(starLabel.split(':')[1]) || 0;
+            }
+            return 0;
+        }
+
+        function generateStarsHtml(rating) {
+            let html = '<span style="display: inline-flex; gap: 2px; align-items: center; font-size: 0.85rem;">';
+            for (let i = 1; i <= 5; i++) {
+                if (i <= rating) {
+                    html += '<i class="fa-solid fa-star" style="color: #fbbf24;"></i>';
+                } else {
+                    html += '<i class="fa-regular fa-star" style="color: var(--border);"></i>';
+                }
+            }
+            html += '</span>';
+            return html;
+        }
+
+        // ==========================================
+        // RENDER DANH SÁCH BÀI VIẾT
+        // ==========================================
         function renderList() {
             const list = document.getElementById('post-list');
             list.innerHTML = '';
 
             posts.forEach(post => {
                 const cat = getCategory(post);
+                const rating = getRating(post);
                 const date = new Date(post.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 
                 const card = document.createElement('div');
@@ -337,7 +441,10 @@
                 card.onclick = () => openPost(post.id);
 
                 card.innerHTML = `
-                    <div class="card-tag mono">${cat}</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <div class="card-tag mono" style="margin-bottom: 0;">${cat}</div>
+                        ${rating > 0 ? generateStarsHtml(rating) : ''}
+                    </div>
                     <div class="card-title">${post.title}</div>
                     <div class="card-date mono">${date}</div>
                 `;
@@ -346,35 +453,81 @@
         }
 
         // ==========================================
-        // XỬ LÝ CHUYỂN ĐỔI MÀN HÌNH
+        // XỬ LÝ CHUYỂN ĐỔI MÀN HÌNH ĐỌC BÀI
         // ==========================================
         function openPost(id) {
             const post = posts.find(p => p.id === id);
             if (!post) return;
 
-            // Đổ dữ liệu vào Reader
+            const rating = getRating(post);
+
             document.getElementById('post-tag').textContent = getCategory(post);
             document.getElementById('post-title').textContent = post.title;
-            document.getElementById('post-meta').textContent = `Published on ${new Date(post.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })} by D4z2`;
+            
+            let metaHtml = `<span>Published on ${new Date(post.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })} by D4z2</span>`;
+            if (rating > 0) {
+                metaHtml += `<span style="color: var(--border);">|</span><span>Difficulty: ${generateStarsHtml(rating)}</span>`;
+            }
+            document.getElementById('post-meta').innerHTML = metaHtml;
             
             const rawHtml = marked.parse(post.body || '*No content provided.*');
             document.getElementById('post-content').innerHTML = DOMPurify.sanitize(rawHtml);
 
+            // --- THÊM PHẦN COMMENTS ---
+            const readerView = document.getElementById('reader-view');
+            let oldComments = document.getElementById('comments-container');
+            if (oldComments) oldComments.remove();
+
+            const commentsContainer = document.createElement('div');
+            commentsContainer.id = 'comments-container';
+            readerView.appendChild(commentsContainer);
+
+            fetchComments(post.number, commentsContainer, post.html_url);
+
             // Chuyển view
             document.getElementById('main-view').style.display = 'none';
             document.getElementById('reader-view').style.display = 'block';
-            window.scrollTo(0, 0); // Cuộn lên đầu trang
+            window.scrollTo(0, 0); 
         }
 
         function showMainView() {
             document.getElementById('reader-view').style.display = 'none';
             document.getElementById('main-view').style.display = 'block';
-            // Scroll lại đúng phần danh sách cho tiện
             document.getElementById('writeups-section').scrollIntoView();
         }
 
-        // Khởi động
+        // Khởi động lấy bài viết
         fetchIssues();
+    </script>
+
+    <!-- SCRIPT TẠO MẠNG NHỆN BACKGROUND -->
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <script>
+        if(document.getElementById('particles-js')) {
+            particlesJS("particles-js", {
+                "particles": {
+                    "number": { "value": 80, "density": { "enable": true, "value_area": 800 } },
+                    "color": { "value": "#2dd4bf" }, 
+                    "shape": { "type": "circle" },
+                    "opacity": { "value": 0.5, "random": false },
+                    "size": { "value": 3, "random": true },
+                    "line_linked": { "enable": true, "distance": 150, "color": "#2dd4bf", "opacity": 0.4, "width": 1 },
+                    "move": { "enable": true, "speed": 2, "direction": "none", "random": false, "straight": false, "out_mode": "out", "bounce": false }
+                },
+                "interactivity": {
+                    "detect_on": "canvas",
+                    "events": {
+                        "onhover": { "enable": true, "mode": "grab" }, 
+                        "onclick": { "enable": true, "mode": "push" },
+                        "resize": true
+                    },
+                    "modes": {
+                        "grab": { "distance": 200, "line_linked": { "opacity": 1 } }
+                    }
+                },
+                "retina_detect": true
+            });
+        }
     </script>
 </body>
 </html>
