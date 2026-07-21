@@ -261,10 +261,7 @@
     </div>
 
     <script>
-        // ==========================================
-        // CẤU HÌNH GITHUB
-        // ==========================================
-        const GITHUB_USERNAME = 'vicvu23'; 
+        const GITHUB_USERNAME = 'd4z2'; 
         const REPO_NAME = 'beginnerwu';
         
         let posts = [];
@@ -285,11 +282,9 @@
             }
         });
 
-        // ==========================================
-        // FETCH DỮ LIỆU TỪ GITHUB ISSUES
-        // ==========================================
         async function fetchIssues() {
-            const url = `https://api.github.com/repos/${encodeURIComponent(GITHUB_USERNAME)}/${encodeURIComponent(REPO_NAME)}/issues?labels=writeup&state=open&per_page=100&_t=${Date.now()}`;
+            // Thêm _t=Date.now() để phá cache, đảm bảo lấy bài mới nhất
+            const url = `https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/issues?labels=writeup&state=open&per_page=100&_t=${Date.now()}`;
             const listEl = document.getElementById('post-list');
 
             try {
@@ -316,12 +311,60 @@
             }
         }
 
-        // ==========================================
-        // RENDER DANH SÁCH BÀI VIẾT
-        // ==========================================
+        async function fetchComments(issueNumber, container, issueUrl) {
+            container.innerHTML = '<div class="status-msg"><i class="fa-solid fa-circle-notch fa-spin"></i> Loading comments...</div>';
+            
+            try {
+                // Gọi API lấy comment của đúng cái Issue đó
+                const res = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/issues/${issueNumber}/comments?_t=${Date.now()}`);
+                const comments = await res.json();
+                
+                let html = `
+                <div style="margin-top: 4rem; border-top: 1px solid var(--border); padding-top: 2rem;">
+                    <h3 style="margin-bottom: 1.5rem; color: var(--text-main);">
+                        <i class="fa-regular fa-comments"></i> Comments (${comments.length})
+                    </h3>`;
+                
+                // Nếu có comment thì render ra
+                if (comments.length > 0) {
+                    comments.forEach(c => {
+                        const date = new Date(c.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+                        const safeBody = DOMPurify.sanitize(marked.parse(c.body));
+                        
+                        html += `
+                        <div style="margin-bottom: 1.5rem; padding: 1.25rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;">
+                            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+                                <img src="${c.user.avatar_url}" style="width: 32px; height: 32px; border-radius: 50%;">
+                                <div>
+                                    <strong style="color: var(--accent);">${c.user.login}</strong>
+                                    <span style="color: var(--text-muted); font-size: 0.85rem; margin-left: 0.5rem;">${date}</span>
+                                </div>
+                            </div>
+                            <div class="markdown-body" style="font-size: 0.95rem;">${safeBody}</div>
+                        </div>`;
+                    });
+                } else {
+                    html += `<p style="color: var(--text-muted); margin-bottom: 1.5rem;">No comments yet. Be the first to share your thoughts!</p>`;
+                }
+
+                // Nút bấm chuyển sang GitHub để comment
+                html += `
+                    <div style="margin-top: 2rem;">
+                        <a href="${issueUrl}" target="_blank" class="btn btn-outline" style="text-decoration: none;">
+                            <i class="fa-brands fa-github" style="margin-right: 0.5rem;"></i> Post a Comment via GitHub
+                        </a>
+                    </div>
+                </div>`;
+                
+                container.innerHTML = html;
+            } catch (err) {
+                container.innerHTML = `<p style="color: #ef4444;">Failed to load comments.</p>`;
+                console.error("Error fetching comments:", err);
+            }
+        }
+        
         function getCategory(post) {
             const labels = (post.labels || []).map(l => (typeof l === 'string' ? l : l.name || ''));
-            // Bỏ label 'writeup' đi để lấy mảng chính (Pwn, Rev, Web...)
             const specificLabels = labels.filter(l => l.toLowerCase() !== 'writeup');
             return specificLabels.length > 0 ? specificLabels[0] : 'CTF';
         }
@@ -347,14 +390,10 @@
             });
         }
 
-        // ==========================================
-        // XỬ LÝ CHUYỂN ĐỔI MÀN HÌNH
-        // ==========================================
         function openPost(id) {
             const post = posts.find(p => p.id === id);
             if (!post) return;
 
-            // Đổ dữ liệu vào Reader
             document.getElementById('post-tag').textContent = getCategory(post);
             document.getElementById('post-title').textContent = post.title;
             document.getElementById('post-meta').textContent = `Published on ${new Date(post.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })} by D4z2`;
@@ -362,48 +401,35 @@
             const rawHtml = marked.parse(post.body || '*No content provided.*');
             document.getElementById('post-content').innerHTML = DOMPurify.sanitize(rawHtml);
 
+            // --- THÊM PHẦN COMMENTS Ở DƯỚI BÀI VIẾT ---
+            const readerView = document.getElementById('reader-view');
+            
+            // Xóa container comment cũ nếu có (khi đổi qua lại giữa các bài)
+            let oldComments = document.getElementById('comments-container');
+            if (oldComments) oldComments.remove();
+
+            // Tạo container mới cho bình luận
+            const commentsContainer = document.createElement('div');
+            commentsContainer.id = 'comments-container';
+            readerView.appendChild(commentsContainer);
+
+            // Gọi hàm lấy comment (truyền ID của Issue và Link URL của Issue)
+            fetchComments(post.number, commentsContainer, post.html_url);
+
             // Chuyển view
             document.getElementById('main-view').style.display = 'none';
             document.getElementById('reader-view').style.display = 'block';
-            window.scrollTo(0, 0); // Cuộn lên đầu trang
+            window.scrollTo(0, 0); 
         }
 
         function showMainView() {
             document.getElementById('reader-view').style.display = 'none';
             document.getElementById('main-view').style.display = 'block';
-            // Scroll lại đúng phần danh sách cho tiện
             document.getElementById('writeups-section').scrollIntoView();
         }
 
         // Khởi động
         fetchIssues();
-    </script>
-
-    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
-<script>
-  particlesJS("particles-js", {
-    "particles": {
-      "number": { "value": 80, "density": { "enable": true, "value_area": 800 } },
-      "color": { "value": "#2dd4bf" }, // Màu teal giống theme bạn đang dùng
-      "shape": { "type": "circle" },
-      "opacity": { "value": 0.5, "random": false },
-      "size": { "value": 3, "random": true },
-      "line_linked": { "enable": true, "distance": 150, "color": "#2dd4bf", "opacity": 0.4, "width": 1 },
-      "move": { "enable": true, "speed": 2, "direction": "none", "random": false, "straight": false, "out_mode": "out", "bounce": false }
-    },
-    "interactivity": {
-      "detect_on": "canvas",
-      "events": {
-        "onhover": { "enable": true, "mode": "grab" }, // Hiệu ứng nối mạng lưới khi di chuột
-        "onclick": { "enable": true, "mode": "push" },
-        "resize": true
-      },
-      "modes": {
-        "grab": { "distance": 200, "line_linked": { "opacity": 1 } }
-      }
-    },
-    "retina_detect": true
-  });
 </script>
 </body>
 </html>
