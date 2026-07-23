@@ -126,6 +126,61 @@
             margin-bottom: 2rem;
         }
 
+        /* --- ROAD TO 100 WU PROGRESS BAR (ĐÃ NÂNG CẤP) --- */
+        .progress-container {
+            margin-bottom: 2rem;
+            max-width: 700px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border);
+            padding: 1.25rem;
+            border-radius: 12px;
+        }
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            margin-bottom: 0.75rem;
+            color: var(--text-main);
+        }
+        .progress-title {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--accent);
+            font-weight: 700;
+        }
+        .progress-bar-bg {
+            position: relative;
+            width: 100%;
+            height: 10px;
+            background-color: #18181b;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+        .progress-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #14b8a6, var(--accent));
+            border-radius: 6px;
+            box-shadow: 0 0 12px rgba(45, 212, 191, 0.4);
+            transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        /* Các vạch mốc chia nhỏ (25%, 50%, 75%) */
+        .progress-milestones {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            display: flex;
+            justify-content: space-between;
+            pointer-events: none;
+            padding: 0 25%;
+        }
+        .milestone {
+            width: 1px;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.15);
+        }
+
         .hero-actions {
             display: flex;
             gap: 1rem;
@@ -240,11 +295,10 @@
         .about-eyebrow {
             display: block; 
             font-family: 'JetBrains Mono', monospace; 
-            color: #ef4444; /* Đổi sang màu đỏ giống lỗi console */
-            font-size: 1.2rem; /* Tăng kích thước chữ to hơn */
-            font-weight: 700; /* Làm đậm chữ lên cho rõ */
+            color: #ef4444; 
+            font-size: 1.2rem; 
+            font-weight: 700; 
             letter-spacing: 0.12em; 
-            /* text-transform: uppercase;  */
             margin-bottom: 0.9rem;
             min-height: 1.7rem;
         }
@@ -354,7 +408,7 @@
                 <div class="about-visual">
                     <div class="about-glow"></div>
                     <div class="avatar-ring">
-                        <div class="avatar">CTF </div>
+                        <div class="avatar">CTF</div>
                     </div>
                 </div>
 
@@ -364,9 +418,8 @@
                         <button class="lang-btn" id="btn-vi" onclick="setLang('vi')">VI</button>
                     </div>
                     
-                    <span class="about-eyebrow mono" id="typing-whoami">$ whoami</span>
-                    <h1><span class="accent-text" id="typing-name">D4z2</span></h1>
-                    <!-- <p class="about-role mono">Curious Explorer · CTF Player · Builder</p> -->
+                    <span class="about-eyebrow mono" id="typing-whoami"></span>
+                    <h1><span class="accent-text" id="typing-name"></span></h1>
                     
                     <!-- Bản Tiếng Anh (Mặc định) -->
                     <div id="bio-en">
@@ -427,14 +480,21 @@
                 <h1>Learning the Art of Write-ups</h1>
                 <p>This is a chronicle of my CTF journey as an Information Security student. Here, I document everything I learn and achieve along the way. I hope you enjoy reading them.</p>
 
-                <!-- <div class="hero-actions">
-                    <button class="btn btn-primary" onclick="document.getElementById('writeups-section').scrollIntoView({behavior: 'smooth'})">
-                        Explore Writeups
-                    </button>
-                    <button class="btn btn-outline" onclick="showAbout()">
-                        <i class="fa-solid fa-arrow-left"></i> About Me
-                    </button>
-                </div> -->
+                <!-- ROAD TO 100 WU PROGRESS BAR (ĐÃ ĐƯỢC THIẾT KẾ LẠI) -->
+                <div class="progress-container">
+                    <div class="progress-info mono">
+                        <span class="progress-title"><i class="fa-solid fa-flag-checkered"></i> Road to 100 WU</span>
+                        <span id="progress-text" style="color: var(--accent); font-weight: 700;">0 / 100 (0%)</span>
+                    </div>
+                    <div class="progress-bar-bg">
+                        <div id="progress-fill" class="progress-bar-fill"></div>
+                        <div class="progress-milestones">
+                            <div class="milestone"></div>
+                            <div class="milestone"></div>
+                            <div class="milestone"></div>
+                        </div>
+                    </div>
+                </div>
             </section>
 
             <section id="writeups-section">
@@ -517,9 +577,16 @@
             document.getElementById('main-view').style.display = 'block';
             document.getElementById('nav-about').classList.remove('active');
             document.getElementById('nav-explore').classList.add('active');
-            
-            // Ép trang về sát góc trên cùng ngay lập tức, không trượt nữa
             window.scrollTo({ top: 0, behavior: 'instant' });
+        }
+
+        // Cập nhật thanh Road to 100 WU dựa trên số bài viết thực tế
+        function updateRoadProgress(count) {
+            const target = 100;
+            const percentage = Math.min(Math.round((count / target) * 100), 100);
+            
+            document.getElementById('progress-text').textContent = `${count} / ${target} (${percentage}%)`;
+            document.getElementById('progress-fill').style.width = `${percentage}%`;
         }
 
         async function fetchIssues() {
@@ -532,9 +599,11 @@
                 const data = await res.json();
                 posts = data.filter(item => !item.pull_request);
                 
-                document.getElementById('stat-writeups').textContent = posts.length;
+                const totalPosts = posts.length;
+                document.getElementById('stat-writeups').textContent = totalPosts;
+                updateRoadProgress(totalPosts); // Cập nhật progress bar tự động
 
-                if (posts.length === 0) {
+                if (totalPosts === 0) {
                     listEl.innerHTML = `<div class="status-msg" style="grid-column: 1 / -1;">No writeups found. Create an issue with label 'writeup' on GitHub.</div>`;
                     return;
                 }
@@ -676,39 +745,7 @@
             window.scrollTo(0, 0);
         }
 
-        showAbout();
-        fetchIssues();
-    </script>
-
-    <!-- SCRIPT TẠO MẠNG NHỆN BACKGROUND -->
-    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
-    <script>
-        if(document.getElementById('particles-js')) {
-            particlesJS("particles-js", {
-                "particles": {
-                    "number": { "value": 80, "density": { "enable": true, "value_area": 800 } },
-                    "color": { "value": "#2dd4bf" },
-                    "shape": { "type": "circle" },
-                    "opacity": { "value": 0.5, "random": false },
-                    "size": { "value": 3, "random": true },
-                    "line_linked": { "enable": true, "distance": 150, "color": "#2dd4bf", "opacity": 0.4, "width": 1 },
-                    "move": { "enable": true, "speed": 2, "direction": "none", "random": false, "straight": false, "out_mode": "out", "bounce": false }
-                },
-                "interactivity": {
-                    "detect_on": "canvas",
-                    "events": {
-                        "onhover": { "enable": true, "mode": "grab" },
-                        "onclick": { "enable": true, "mode": "push" },
-                        "resize": true
-                    },
-                    "modes": {
-                        "grab": { "distance": 200, "line_linked": { "opacity": 1 } }
-                    }
-                },
-                "retina_detect": true
-            });
-        }
-
+        // Hiệu ứng gõ chữ
         function typeWriterSequence() {
             const elWhoami = document.getElementById('typing-whoami');
             const elName = document.getElementById('typing-name');
@@ -782,9 +819,43 @@
             runCycle();
         }
 
+        // Khởi động
         window.addEventListener('DOMContentLoaded', () => {
             typeWriterSequence();
         });
+
+        showAbout();
+        fetchIssues();
+    </script>
+
+    <!-- SCRIPT TẠO MẠNG NHỆN BACKGROUND -->
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <script>
+        if(document.getElementById('particles-js')) {
+            particlesJS("particles-js", {
+                "particles": {
+                    "number": { "value": 80, "density": { "enable": true, "value_area": 800 } },
+                    "color": { "value": "#2dd4bf" },
+                    "shape": { "type": "circle" },
+                    "opacity": { "value": 0.5, "random": false },
+                    "size": { "value": 3, "random": true },
+                    "line_linked": { "enable": true, "distance": 150, "color": "#2dd4bf", "opacity": 0.4, "width": 1 },
+                    "move": { "enable": true, "speed": 2, "direction": "none", "random": false, "straight": false, "out_mode": "out", "bounce": false }
+                },
+                "interactivity": {
+                    "detect_on": "canvas",
+                    "events": {
+                        "onhover": { "enable": true, "mode": "grab" },
+                        "onclick": { "enable": true, "mode": "push" },
+                        "resize": true
+                    },
+                    "modes": {
+                        "grab": { "distance": 200, "line_linked": { "opacity": 1 } }
+                    }
+                },
+                "retina_detect": true
+            });
+        }
     </script>
 </body>
 </html>
