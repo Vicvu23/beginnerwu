@@ -12,7 +12,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-    
+
     <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
@@ -23,26 +23,37 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
 
     <style>
+        .typing-cursor {
+            display: inline-block;
+            color: var(--accent);
+            font-weight: bold;
+            animation: blink 0.7s infinite;
+            margin-left: 2px;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
         :root {
             --bg-base: #000000;
             --bg-surface: #0a0a0a;
             --bg-card: #111111;
             --text-main: #f5f5f5;
             --text-muted: #a1a1aa;
-            --accent: #2dd4bf; 
+            --accent: #2dd4bf;
             --accent-hover: #14b8a6;
             --border: #27272a;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        
+
         body {
             background-color: var(--bg-base);
             color: var(--text-main);
             font-family: 'Inter', sans-serif;
             line-height: 1.6;
             -webkit-font-smoothing: antialiased;
-            /* Đảm bảo nội dung không bị che khuất bởi background */
             position: relative;
         }
 
@@ -54,16 +65,48 @@
             margin: 0 auto;
             padding: 2rem 1.5rem;
             position: relative;
-            z-index: 1; /* Nổi lên trên mạng nhện */
+            z-index: 1;
         }
 
-        /* --- HERO SECTION --- */
+        /* --- TOP NAV --- */
+        .topnav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-top: 0.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .brand {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            font-size: 1.25rem;
+            letter-spacing: -0.01em;
+            text-align: center;
+        }
+        .brand .dot { color: var(--accent); }
+        
+        .nav-btn {
+            padding: 0.55rem 1.15rem;
+            border-radius: 999px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            font-family: 'Inter', sans-serif;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .nav-btn:hover { color: var(--text-main); border-color: var(--accent); }
+        .nav-btn.active { background: var(--accent); color: #000; border-color: var(--accent); }
+
+        /* --- HERO SECTION (writeups list page) --- */
         .hero {
             background-color: var(--bg-surface);
             border: 1px solid var(--border);
             border-radius: 16px;
             padding: 3rem 2.5rem;
-            margin-top: 2rem;
             margin-bottom: 3rem;
             box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
         }
@@ -94,6 +137,7 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
+            gap: 0.5rem;
             padding: 0.75rem 1.5rem;
             border-radius: 8px;
             font-weight: 600;
@@ -104,39 +148,16 @@
             border: none;
         }
 
-        .btn-primary {
-            background-color: var(--accent);
-            color: #000;
-        }
+        .btn-primary { background-color: var(--accent); color: #000; }
+        .btn-primary:hover { background-color: var(--accent-hover); transform: translateY(-2px); }
 
-        .btn-primary:hover {
-            background-color: var(--accent-hover);
-            transform: translateY(-2px);
-        }
-
-        .btn-outline {
-            background-color: transparent;
-            color: var(--text-main);
-            border: 1px solid var(--border);
-        }
-
-        .btn-outline:hover {
-            background-color: var(--border);
-        }
+        .btn-outline { background-color: transparent; color: var(--text-main); border: 1px solid var(--border); }
+        .btn-outline:hover { background-color: var(--border); }
 
         /* --- WRITEUP LIST --- */
-        .section-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin-bottom: 1.5rem;
-            color: var(--text-main);
-        }
+        .section-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 1.5rem; color: var(--text-main); }
 
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 1.5rem;
-        }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
 
         .card {
             background-color: var(--bg-card);
@@ -148,12 +169,7 @@
             display: flex;
             flex-direction: column;
         }
-
-        .card:hover {
-            border-color: var(--accent);
-            transform: translateY(-4px);
-            box-shadow: 0 10px 25px -5px rgba(45, 212, 191, 0.1);
-        }
+        .card:hover { border-color: var(--accent); transform: translateY(-4px); box-shadow: 0 10px 25px -5px rgba(45, 212, 191, 0.1); }
 
         .card-tag {
             align-self: flex-start;
@@ -166,18 +182,111 @@
             background: rgba(45, 212, 191, 0.1);
             color: var(--accent);
         }
+        .card-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 0.75rem; line-height: 1.4; }
+        .card-date { margin-top: auto; font-size: 0.85rem; color: var(--text-muted); }
 
-        .card-title {
-            font-size: 1.25rem;
-            font-weight: 700;
-            margin-bottom: 0.75rem;
-            line-height: 1.4;
+        /* --- ABOUT ME VIEW --- */
+        .about-hero {
+            display: flex;
+            align-items: center;
+            gap: 3rem;
+            background-color: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 3.5rem 2.5rem;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+            flex-wrap: wrap;
         }
 
-        .card-date {
-            margin-top: auto;
-            font-size: 0.85rem;
-            color: var(--text-muted);
+        .about-visual { position: relative; width: 200px; height: 200px; flex-shrink: 0; margin: 0 auto; }
+        .about-glow {
+            position: absolute; inset: -35px;
+            background: radial-gradient(circle, rgba(45, 212, 191, 0.25), transparent 70%);
+            filter: blur(18px);
+            animation: pulse 3.5s ease-in-out infinite;
+            z-index: 0;
+        }
+        @keyframes pulse { 0%, 100% { opacity: 0.55; transform: scale(1); } 50% { opacity: 1; transform: scale(1.08); } }
+
+        .avatar-ring {
+            position: relative; z-index: 1;
+            width: 100%; height: 100%; border-radius: 50%;
+            padding: 4px;
+            background: linear-gradient(135deg, var(--accent), transparent 55%, var(--accent));
+            animation: float 4.5s ease-in-out infinite;
+        }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+        .avatar {
+            width: 100%; height: 100%; border-radius: 50%;
+            background: var(--bg-card);
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'JetBrains Mono', monospace; font-size: 3rem; font-weight: 700;
+            color: var(--accent);
+        }
+
+        .about-text { flex: 1; min-width: 280px; }
+        
+        /* Language Toggle Buttons */
+        .lang-toggle { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
+        .lang-btn {
+            background: transparent; border: 1px solid var(--border); color: var(--text-muted);
+            padding: 0.2rem 0.6rem; border-radius: 4px; cursor: pointer; 
+            font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; transition: all 0.2s ease;
+        }
+        .lang-btn.active { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 700;}
+        .lang-btn:hover:not(.active) { color: var(--text-main); border-color: var(--text-main); }
+
+        .about-eyebrow {
+            display: block; 
+            font-family: 'JetBrains Mono', monospace; 
+            color: #ef4444; /* Đổi sang màu đỏ giống lỗi console */
+            font-size: 1.2rem; /* Tăng kích thước chữ to hơn */
+            font-weight: 700; /* Làm đậm chữ lên cho rõ */
+            letter-spacing: 0.12em; 
+            /* text-transform: uppercase;  */
+            margin-bottom: 0.9rem;
+            min-height: 1.7rem;
+        }
+        .about-text h1 { 
+            font-size: clamp(1.9rem, 4vw, 2.8rem); 
+            font-weight: 800; 
+            letter-spacing: -0.02em; 
+            margin-bottom: 0.6rem;
+            min-height: 1.7em;
+        }
+        .about-text h1 .accent-text { color: var(--accent); }
+        .about-role { color: var(--text-muted); font-family: 'JetBrains Mono', monospace; font-size: 0.95rem; margin-bottom: 1.5rem; }
+        
+        .about-bio { color: var(--text-muted); font-size: 1.02rem; line-height: 1.85; margin-bottom: 1rem; max-width: 560px; }
+
+        .skill-chips { display: flex; flex-wrap: wrap; gap: 0.6rem; margin: 1.6rem 0; }
+        .skill-chip {
+            padding: 0.4rem 0.9rem; border: 1px solid var(--border); border-radius: 999px;
+            font-size: 0.8rem; font-family: 'JetBrains Mono', monospace; color: var(--text-main);
+            transition: all 0.2s ease;
+        }
+        .skill-chip:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-2px); }
+
+        .social-row { display: flex; gap: 0.8rem; margin-bottom: 2rem; }
+        .social-btn {
+            width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: center;
+            color: var(--text-muted); text-decoration: none; transition: all 0.2s ease;
+        }
+        .social-btn:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-3px); }
+
+        .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; margin: 2.5rem 0 3rem; }
+        .stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.4rem 1rem; text-align: center; transition: border-color 0.2s ease; }
+        .stat-card:hover { border-color: var(--accent); }
+        .stat-num { display: block; font-family: 'JetBrains Mono', monospace; font-size: 1.9rem; font-weight: 700; color: var(--accent); margin-bottom: 0.3rem; }
+        .stat-label { color: var(--text-muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; }
+
+        @media (max-width: 680px) {
+            .about-hero { flex-direction: column; text-align: center; padding: 2.5rem 1.75rem; }
+            .about-bio { margin-left: auto; margin-right: auto; }
+            .skill-chips, .social-row, .lang-toggle { justify-content: center; }
+            .topnav { flex-direction: column; gap: 1rem; }
         }
 
         /* --- READER MODE --- */
@@ -191,19 +300,9 @@
             box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
         }
 
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
         .back-btn {
-            background: none;
-            border: none;
-            color: var(--text-muted);
-            font-size: 1rem;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin-bottom: 2rem;
-            padding: 0;
+            background: none; border: none; color: var(--text-muted); font-size: 1rem; cursor: pointer;
+            display: inline-flex; align-items: center; gap: 0.5rem; margin-bottom: 2rem; padding: 0;
             transition: color 0.2s;
         }
         .back-btn:hover { color: var(--accent); }
@@ -227,9 +326,12 @@
         .markdown-body ul, .markdown-body ol { margin-bottom: 1.5rem; padding-left: 1.5rem; }
         .markdown-body li { margin-bottom: 0.5rem; }
 
-        /* Loading */
         .status-msg { text-align: center; padding: 3rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
         .status-msg i { color: var(--accent); margin-right: 0.5rem; }
+
+        @media (prefers-reduced-motion: reduce) {
+            .avatar-ring, .about-glow { animation: none; }
+        }
     </style>
 </head>
 <body>
@@ -238,22 +340,103 @@
     <div id="particles-js" style="position: fixed; width: 100%; height: 100%; top: 0; left: 0; z-index: -1;"></div>
 
     <div class="container">
-        
-        <!-- MÀN HÌNH CHÍNH (HERO + LIST) -->
-        <div id="main-view">
-            <!-- Hero Section -->
-            <section class="hero">
-                <h1>Learning the Art of Write-ups</h1>
-                <p>This is a chronicle of my CTF journey as an Information Security student. Here, I document everything I learn and achieve along the way. I hope you enjoy reading them.</p>
-                
-                <div class="hero-actions">
-                    <button class="btn btn-primary" onclick="document.getElementById('writeups-section').scrollIntoView({behavior: 'smooth'})">
-                        Explore Writeups
+
+        <!-- TOP NAV -->
+        <nav class="topnav">
+            <button class="nav-btn active" id="nav-about" onclick="showAbout()">About Me</button>
+            <div class="brand">D4z2<span class="dot">.</span></div>
+            <button class="nav-btn" id="nav-explore" onclick="showMainView()">Explore Writeups</button>
+        </nav>
+
+        <!-- MÀN HÌNH GIỚI THIỆU -->
+        <div id="about-view">
+            <section class="about-hero">
+                <div class="about-visual">
+                    <div class="about-glow"></div>
+                    <div class="avatar-ring">
+                        <div class="avatar">CTF </div>
+                    </div>
+                </div>
+
+                <div class="about-text">
+                    <div class="lang-toggle">
+                        <button class="lang-btn active" id="btn-en" onclick="setLang('en')">EN</button>
+                        <button class="lang-btn" id="btn-vi" onclick="setLang('vi')">VI</button>
+                    </div>
+                    
+                    <span class="about-eyebrow mono" id="typing-whoami">$ whoami</span>
+                    <h1><span class="accent-text" id="typing-name">D4z2</span></h1>
+                    <!-- <p class="about-role mono">Curious Explorer · CTF Player · Builder</p> -->
+                    
+                    <!-- Bản Tiếng Anh (Mặc định) -->
+                    <div id="bio-en">
+                        <p class="about-bio">
+                            I'm a young and curious mind exploring the world of cybersecurity through CTF challenges. This digital space serves as my personal archive for writeups, notes, and fragments of code gathered along the journey.
+                        </p>
+                        <p class="about-bio">
+                            Every solved challenge is just another piece of the puzzle. Hope you find something interesting or helpful here!
+                        </p>
+                    </div>
+
+                    <!-- Bản Tiếng Việt -->
+                    <div id="bio-vi" style="display: none;">
+                        <p class="about-bio">
+                            Mình là một người trẻ tò mò, thích khám phá và thử sức với các thử thách CTF. Đây là không gian nhỏ để mình lưu giữ những bài writeup, ghi chú phân tích và hành trình trên tìm kiếm flag của riêng mình.
+                        </p>
+                        <p class="about-bio">
+                            Đi một ngày đàng, học một sàng khôn. Hy vọng với mỗi challenge giải được, mình sẽ học được thứ gì đó cho dù ít hay nhiều!
+                        </p>
+                    </div>
+
+                    <div class="skill-chips">
+                        <span class="skill-chip">Reverse Engineering</span>
+                        <span class="skill-chip">Web Exploitation</span>
+                    </div>
+
+                    <div class="social-row">
+                        <a class="social-btn" href="https://github.com/d4z2" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
+                            <i class="fa-brands fa-github"></i>
+                        </a>
+                    </div>
+
+                    <button class="btn btn-primary" onclick="showMainView()">
+                        Explore Writeups <i class="fa-solid fa-arrow-right"></i>
                     </button>
                 </div>
             </section>
 
-            <!-- List Section -->
+            <div class="stats-row">
+                <div class="stat-card">
+                    <span class="stat-num mono" id="stat-writeups">–</span>
+                    <span class="stat-label">Writeups</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-num mono" style="color: #ef4444;">∞</span>
+                    <span class="stat-label">Segfaults</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-num mono" style="color: #fbbf24;">99+</span>
+                    <span class="stat-label">Cups of Coffee</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- MÀN HÌNH CHÍNH (HERO + LIST) -->
+        <div id="main-view" style="display: none;">
+            <section class="hero">
+                <h1>Learning the Art of Write-ups</h1>
+                <p>This is a chronicle of my CTF journey as an Information Security student. Here, I document everything I learn and achieve along the way. I hope you enjoy reading them.</p>
+
+                <!-- <div class="hero-actions">
+                    <button class="btn btn-primary" onclick="document.getElementById('writeups-section').scrollIntoView({behavior: 'smooth'})">
+                        Explore Writeups
+                    </button>
+                    <button class="btn btn-outline" onclick="showAbout()">
+                        <i class="fa-solid fa-arrow-left"></i> About Me
+                    </button>
+                </div> -->
+            </section>
+
             <section id="writeups-section">
                 <h2 class="section-title">Latest Case Files</h2>
                 <div id="post-list" class="grid">
@@ -269,7 +452,7 @@
             <button class="back-btn" onclick="showMainView()">
                 <i class="fa-solid fa-arrow-left"></i> Back to Writeups
             </button>
-            
+
             <div class="reader-header">
                 <div id="post-tag" class="card-tag" style="display: inline-block; margin-bottom: 1rem;">TAG</div>
                 <h1 id="post-title" class="reader-title">Title</h1>
@@ -285,15 +468,10 @@
 
     <!-- CÁC SCRIPT XỬ LÝ LOGIC -->
     <script>
-        // ==========================================
-        // CẤU HÌNH GITHUB
-        // ==========================================
-        const GITHUB_USERNAME = 'vicvu23'; 
+        const GITHUB_USERNAME = 'vicvu23';
         const REPO_NAME = 'beginnerwu';
-        
         let posts = [];
 
-        // Cấu hình Marked.js
         marked.setOptions({
             highlight: (code, lang) => {
                 const language = hljs.getLanguage(lang) ? lang : 'plaintext';
@@ -309,31 +487,57 @@
             }
         });
 
-        // ==========================================
-        // FETCH DỮ LIỆU TỪ GITHUB ISSUES
-        // ==========================================
+        // Hàm chuyển đổi ngôn ngữ (Mặc định 'en' ở bên trái)
+        function setLang(lang) {
+            if (lang === 'vi') {
+                document.getElementById('bio-vi').style.display = 'block';
+                document.getElementById('bio-en').style.display = 'none';
+                document.getElementById('btn-vi').classList.add('active');
+                document.getElementById('btn-en').classList.remove('active');
+            } else {
+                document.getElementById('bio-vi').style.display = 'none';
+                document.getElementById('bio-en').style.display = 'block';
+                document.getElementById('btn-en').classList.add('active');
+                document.getElementById('btn-vi').classList.remove('active');
+            }
+        }
+
+        function showAbout() {
+            document.getElementById('about-view').style.display = 'block';
+            document.getElementById('main-view').style.display = 'none';
+            document.getElementById('reader-view').style.display = 'none';
+            document.getElementById('nav-about').classList.add('active');
+            document.getElementById('nav-explore').classList.remove('active');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function showMainView() {
+            document.getElementById('about-view').style.display = 'none';
+            document.getElementById('reader-view').style.display = 'none';
+            document.getElementById('main-view').style.display = 'block';
+            document.getElementById('nav-about').classList.remove('active');
+            document.getElementById('nav-explore').classList.add('active');
+            
+            // Ép trang về sát góc trên cùng ngay lập tức, không trượt nữa
+            window.scrollTo({ top: 0, behavior: 'instant' });
+        }
+
         async function fetchIssues() {
-            // Dùng Date.now() để luôn lấy bài mới, chống cache
             const url = `https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/issues?labels=writeup&state=open&per_page=100&_t=${Date.now()}`;
             const listEl = document.getElementById('post-list');
 
             try {
                 const res = await fetch(url, { headers: { 'Accept': 'application/vnd.github+json' } });
-                
-                if (!res.ok) {
-                    throw new Error(`API Error: ${res.status}`);
-                }
-                
+                if (!res.ok) throw new Error(`API Error: ${res.status}`);
                 const data = await res.json();
-                
-                // Lọc bỏ Pull Requests
                 posts = data.filter(item => !item.pull_request);
+                
+                document.getElementById('stat-writeups').textContent = posts.length;
 
                 if (posts.length === 0) {
                     listEl.innerHTML = `<div class="status-msg" style="grid-column: 1 / -1;">No writeups found. Create an issue with label 'writeup' on GitHub.</div>`;
                     return;
                 }
-
                 renderList();
             } catch (err) {
                 listEl.innerHTML = `<div class="status-msg" style="grid-column: 1 / -1; color: #ef4444;"><i class="fa-solid fa-triangle-exclamation"></i> Error loading writeups: ${err.message}</div>`;
@@ -341,12 +545,8 @@
             }
         }
 
-        // ==========================================
-        // TẢI VÀ HIỂN THỊ COMMENT CHO BÀI VIẾT
-        // ==========================================
         async function fetchComments(issueNumber, container, issueUrl) {
             container.innerHTML = '<div class="status-msg"><i class="fa-solid fa-circle-notch fa-spin"></i> Loading comments...</div>';
-            
             try {
                 const res = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/issues/${issueNumber}/comments?_t=${Date.now()}`);
                 const comments = await res.json();
@@ -356,12 +556,12 @@
                     <h3 style="margin-bottom: 1.5rem; color: var(--text-main);">
                         <i class="fa-regular fa-comments"></i> Comments (${comments.length})
                     </h3>`;
-                
+
                 if (comments.length > 0) {
                     comments.forEach(c => {
                         const date = new Date(c.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
                         const safeBody = DOMPurify.sanitize(marked.parse(c.body));
-                        
+
                         html += `
                         <div style="margin-bottom: 1.5rem; padding: 1.25rem; background: var(--bg-base); border: 1px solid var(--border); border-radius: 8px;">
                             <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
@@ -385,17 +585,12 @@
                         </a>
                     </div>
                 </div>`;
-                
                 container.innerHTML = html;
             } catch (err) {
                 container.innerHTML = `<p style="color: #ef4444;">Failed to load comments.</p>`;
-                console.error("Error fetching comments:", err);
             }
         }
 
-        // ==========================================
-        // XỬ LÝ LABELS & STARS
-        // ==========================================
         function getCategory(post) {
             const labels = (post.labels || []).map(l => (typeof l === 'string' ? l : l.name || '').toLowerCase());
             const specificLabels = labels.filter(l => l !== 'writeup' && !l.startsWith('star:'));
@@ -405,9 +600,7 @@
         function getRating(post) {
             const labels = (post.labels || []).map(l => (typeof l === 'string' ? l : l.name || '').toLowerCase());
             const starLabel = labels.find(l => l.startsWith('star:'));
-            if (starLabel) {
-                return parseInt(starLabel.split(':')[1]) || 0;
-            }
+            if (starLabel) return parseInt(starLabel.split(':')[1]) || 0;
             return 0;
         }
 
@@ -424,13 +617,9 @@
             return html;
         }
 
-        // ==========================================
-        // RENDER DANH SÁCH BÀI VIẾT
-        // ==========================================
         function renderList() {
             const list = document.getElementById('post-list');
             list.innerHTML = '';
-
             posts.forEach(post => {
                 const cat = getCategory(post);
                 const rating = getRating(post);
@@ -452,28 +641,23 @@
             });
         }
 
-        // ==========================================
-        // XỬ LÝ CHUYỂN ĐỔI MÀN HÌNH ĐỌC BÀI
-        // ==========================================
         function openPost(id) {
             const post = posts.find(p => p.id === id);
             if (!post) return;
 
             const rating = getRating(post);
-
             document.getElementById('post-tag').textContent = getCategory(post);
             document.getElementById('post-title').textContent = post.title;
-            
+
             let metaHtml = `<span>Published on ${new Date(post.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })} by D4z2</span>`;
             if (rating > 0) {
                 metaHtml += `<span style="color: var(--border);">|</span><span>Difficulty: ${generateStarsHtml(rating)}</span>`;
             }
             document.getElementById('post-meta').innerHTML = metaHtml;
-            
+
             const rawHtml = marked.parse(post.body || '*No content provided.*');
             document.getElementById('post-content').innerHTML = DOMPurify.sanitize(rawHtml);
 
-            // --- THÊM PHẦN COMMENTS ---
             const readerView = document.getElementById('reader-view');
             let oldComments = document.getElementById('comments-container');
             if (oldComments) oldComments.remove();
@@ -484,19 +668,15 @@
 
             fetchComments(post.number, commentsContainer, post.html_url);
 
-            // Chuyển view
+            document.getElementById('about-view').style.display = 'none';
             document.getElementById('main-view').style.display = 'none';
             document.getElementById('reader-view').style.display = 'block';
-            window.scrollTo(0, 0); 
+            document.getElementById('nav-about').classList.remove('active');
+            document.getElementById('nav-explore').classList.add('active');
+            window.scrollTo(0, 0);
         }
 
-        function showMainView() {
-            document.getElementById('reader-view').style.display = 'none';
-            document.getElementById('main-view').style.display = 'block';
-            document.getElementById('writeups-section').scrollIntoView();
-        }
-
-        // Khởi động lấy bài viết
+        showAbout();
         fetchIssues();
     </script>
 
@@ -507,7 +687,7 @@
             particlesJS("particles-js", {
                 "particles": {
                     "number": { "value": 80, "density": { "enable": true, "value_area": 800 } },
-                    "color": { "value": "#2dd4bf" }, 
+                    "color": { "value": "#2dd4bf" },
                     "shape": { "type": "circle" },
                     "opacity": { "value": 0.5, "random": false },
                     "size": { "value": 3, "random": true },
@@ -517,7 +697,7 @@
                 "interactivity": {
                     "detect_on": "canvas",
                     "events": {
-                        "onhover": { "enable": true, "mode": "grab" }, 
+                        "onhover": { "enable": true, "mode": "grab" },
                         "onclick": { "enable": true, "mode": "push" },
                         "resize": true
                     },
@@ -528,6 +708,83 @@
                 "retina_detect": true
             });
         }
+
+        function typeWriterSequence() {
+            const elWhoami = document.getElementById('typing-whoami');
+            const elName = document.getElementById('typing-name');
+            if (!elWhoami || !elName) return;
+
+            const textWhoami = "// whoami";
+            const textName = "D4z2";
+            const speed = 120;
+            const delayBetweenLoops = 3000;
+
+            const cursor = document.createElement('span');
+            cursor.className = 'typing-cursor';
+            cursor.textContent = '_';
+
+            function runCycle() {
+                elWhoami.textContent = '';
+                elName.textContent = '';
+                
+                let i = 0;
+                function typeWhoami() {
+                    if (i < textWhoami.length) {
+                        elWhoami.textContent += textWhoami.charAt(i);
+                        i++;
+                        setTimeout(typeWhoami, speed);
+                    } else {
+                        setTimeout(typeNameStart, 300);
+                    }
+                }
+
+                let j = 0;
+                function typeNameStart() {
+                    if (j < textName.length) {
+                        elName.textContent = textName.substring(0, j + 1);
+                        elName.appendChild(cursor);
+                        j++;
+                        setTimeout(typeNameStart, speed);
+                    } else {
+                        setTimeout(eraseAll, delayBetweenLoops);
+                    }
+                }
+
+                function eraseAll() {
+                    elName.innerHTML = ''; 
+                    let nameLen = textName.length;
+                    
+                    function eraseName() {
+                        if (nameLen > 0) {
+                            elName.textContent = textName.substring(0, nameLen - 1);
+                            nameLen--;
+                            setTimeout(eraseName, speed / 2);
+                        } else {
+                            let whoamiLen = textWhoami.length;
+                            function eraseWhoami() {
+                                if (whoamiLen > 0) {
+                                    elWhoami.textContent = textWhoami.substring(0, whoamiLen - 1);
+                                    whoamiLen--;
+                                    setTimeout(eraseWhoami, speed / 2);
+                                } else {
+                                    setTimeout(runCycle, 500);
+                                }
+                            }
+                            eraseWhoami();
+                        }
+                    }
+                    eraseName();
+                }
+
+                typeWhoami();
+            }
+
+            runCycle();
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            typeWriterSequence();
+        });
     </script>
 </body>
 </html>
