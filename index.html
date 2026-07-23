@@ -126,7 +126,7 @@
             margin-bottom: 2rem;
         }
 
-        /* --- ROAD TO 100 WU PROGRESS BAR (ĐÃ NÂNG CẤP) --- */
+        /* --- ROAD TO 100 WU PROGRESS BAR --- */
         .progress-container {
             margin-bottom: 2rem;
             max-width: 700px;
@@ -166,7 +166,6 @@
             box-shadow: 0 0 12px rgba(45, 212, 191, 0.4);
             transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        /* Các vạch mốc chia nhỏ (25%, 50%, 75%) */
         .progress-milestones {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -282,7 +281,6 @@
 
         .about-text { flex: 1; min-width: 280px; }
         
-        /* Language Toggle Buttons */
         .lang-toggle { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
         .lang-btn {
             background: transparent; border: 1px solid var(--border); color: var(--text-muted);
@@ -480,7 +478,7 @@
                 <h1>Learning the Art of Write-ups</h1>
                 <p>This is a chronicle of my CTF journey as an Information Security student. Here, I document everything I learn and achieve along the way. I hope you enjoy reading them.</p>
 
-                <!-- ROAD TO 100 WU PROGRESS BAR (ĐÃ ĐƯỢC THIẾT KẾ LẠI) -->
+                <!-- ROAD TO 100 WU PROGRESS BAR -->
                 <div class="progress-container">
                     <div class="progress-info mono">
                         <span class="progress-title"><i class="fa-solid fa-flag-checkered"></i> Road to 100 WU</span>
@@ -595,13 +593,20 @@
 
             try {
                 const res = await fetch(url, { headers: { 'Accept': 'application/vnd.github+json' } });
-                if (!res.ok) throw new Error(`API Error: ${res.status}`);
+                
+                if (!res.ok) {
+                    if (res.status === 403) {
+                        throw new Error("GitHub API Rate Limit Exceeded (403). Please wait a few minutes.");
+                    }
+                    throw new Error(`API Error: ${res.status}`);
+                }
+                
                 const data = await res.json();
                 posts = data.filter(item => !item.pull_request);
                 
                 const totalPosts = posts.length;
                 document.getElementById('stat-writeups').textContent = totalPosts;
-                updateRoadProgress(totalPosts); // Cập nhật progress bar tự động
+                updateRoadProgress(totalPosts);
 
                 if (totalPosts === 0) {
                     listEl.innerHTML = `<div class="status-msg" style="grid-column: 1 / -1;">No writeups found. Create an issue with label 'writeup' on GitHub.</div>`;
@@ -751,7 +756,7 @@
             const elName = document.getElementById('typing-name');
             if (!elWhoami || !elName) return;
 
-            const textWhoami = "// whoami";
+            const textWhoami = "$ whoami";
             const textName = "D4z2";
             const speed = 120;
             const delayBetweenLoops = 3000;
