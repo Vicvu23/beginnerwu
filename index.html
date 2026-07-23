@@ -593,6 +593,29 @@
 
             try {
                 const res = await fetch(url, { headers: { 'Accept': 'application/vnd.github+json' } });
+                if (!res.ok) throw new Error(`API Error: ${res.status}`);
+                const data = await res.json();
+                posts = data.filter(item => !item.pull_request);
+                
+                document.getElementById('stat-writeups').textContent = posts.length;
+
+                if (posts.length === 0) {
+                    listEl.innerHTML = `<div class="status-msg" style="grid-column: 1 / -1;">No writeups found. Create an issue with label 'writeup' on GitHub.</div>`;
+                    return;
+                }
+                renderList();
+            } catch (err) {
+                listEl.innerHTML = `<div class="status-msg" style="grid-column: 1 / -1; color: #ef4444;"><i class="fa-solid fa-triangle-exclamation"></i> Error loading writeups: ${err.message}</div>`;
+                console.error(err);
+            }
+        }
+
+        <!-- async function fetchIssues() {
+            const url = `https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/issues?labels=writeup&state=open&per_page=100&_t=${Date.now()}`;
+            const listEl = document.getElementById('post-list');
+
+            try {
+                const res = await fetch(url, { headers: { 'Accept': 'application/vnd.github+json' } });
                 
                 if (!res.ok) {
                     if (res.status === 403) {
@@ -617,7 +640,7 @@
                 listEl.innerHTML = `<div class="status-msg" style="grid-column: 1 / -1; color: #ef4444;"><i class="fa-solid fa-triangle-exclamation"></i> Error loading writeups: ${err.message}</div>`;
                 console.error(err);
             }
-        }
+        } -->
 
         async function fetchComments(issueNumber, container, issueUrl) {
             container.innerHTML = '<div class="status-msg"><i class="fa-solid fa-circle-notch fa-spin"></i> Loading comments...</div>';
