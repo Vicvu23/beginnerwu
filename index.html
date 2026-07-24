@@ -737,7 +737,9 @@
             document.getElementById('about-view').style.display = 'none';
             document.getElementById('reader-view').style.display = 'none';
             document.getElementById('main-view').style.display = 'block';
-            document.getElementById('terminal-view').style.display = 'block'; // HIỆN terminal
+            
+            // Sửa 'block' thành 'none' ở dòng dưới đây để giấu Console đi
+            document.getElementById('terminal-view').style.display = 'none'; 
             
             document.getElementById('nav-about').classList.remove('active');
             document.getElementById('nav-explore').classList.add('active');
