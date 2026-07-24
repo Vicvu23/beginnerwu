@@ -1153,7 +1153,8 @@
                     termOutputContainer.innerHTML = '';
                     return; 
                 case 'help':
-                    output = 'Available commands: whoami, date, clear, echo, ls, cat, submit, sudo';
+                    output = 'Available commands: whoami, date, clear, echo, ls, cat, submit, sudo<br><br>' +
+                             '<span style="color: #3b82f6; font-weight: bold;">[!] Hint:</span> Use <span style="color: #facc15;">cat flag.txt</span> to read the flag, then use <span style="color: #facc15;">submit &lt;flag_content&gt;</span> to see what happens!';
                     break;
                 case 'echo':
                     output = escapeHTML(args.slice(1).join(' '));
