@@ -645,7 +645,7 @@
         </div>
 
         <!-- INTERACTIVE LINUX TERMINAL SECTION -->
-        <div class="terminal-section">
+        <div id="terminal-view" class="terminal-section">
             <div class="term-header">
                 <div class="term-buttons">
                     <span class="term-btn red"></span>
@@ -726,6 +726,8 @@
             document.getElementById('about-view').style.display = 'block';
             document.getElementById('main-view').style.display = 'none';
             document.getElementById('reader-view').style.display = 'none';
+            document.getElementById('terminal-view').style.display = 'block'; // Hiển thị Terminal
+            
             document.getElementById('nav-about').classList.add('active');
             document.getElementById('nav-explore').classList.remove('active');
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -735,6 +737,8 @@
             document.getElementById('about-view').style.display = 'none';
             document.getElementById('reader-view').style.display = 'none';
             document.getElementById('main-view').style.display = 'block';
+            document.getElementById('terminal-view').style.display = 'block'; // Hiển thị Terminal
+            
             document.getElementById('nav-about').classList.remove('active');
             document.getElementById('nav-explore').classList.add('active');
             window.scrollTo({ top: 0, behavior: 'instant' });
@@ -929,10 +933,11 @@
             document.getElementById('about-view').style.display = 'none';
             document.getElementById('main-view').style.display = 'none';
             document.getElementById('reader-view').style.display = 'block';
+            document.getElementById('terminal-view').style.display = 'none'; // Giấu Terminal đi
+            
             document.getElementById('nav-about').classList.remove('active');
             document.getElementById('nav-explore').classList.add('active');
             window.scrollTo(0, 0);
-        }
 
         // Hiệu ứng gõ chữ
         function typeWriterSequence() {
