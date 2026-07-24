@@ -201,8 +201,30 @@
         .btn-outline { background-color: transparent; color: var(--text-main); border: 1px solid var(--border); }
         .btn-outline:hover { background-color: var(--border); }
 
+        /* --- FILTER CHIPS --- */
+        .filter-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+            margin-bottom: 1.5rem;
+        }
+        .filter-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 0.35rem 0.9rem;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .filter-btn:hover { border-color: var(--accent); color: var(--accent); }
+        .filter-btn.active { background: var(--accent); color: #000; border-color: var(--accent); }
+
         /* --- WRITEUP LIST --- */
-        .section-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 1.5rem; color: var(--text-main); }
+        .section-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem; color: var(--text-main); }
 
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
 
@@ -465,15 +487,8 @@
             gap: 1rem;
         }
 
-        .footer-left p {
-            margin-bottom: 0.25rem;
-        }
-
-        .footer-right {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
+        .footer-left p { margin-bottom: 0.25rem; }
+        .footer-right { display: flex; align-items: center; gap: 1rem; }
 
         .back-to-top {
             background: transparent;
@@ -500,6 +515,12 @@
                 flex-direction: column;
                 text-align: center;
             }
+        }
+
+        /* --- TRAP CARD ANIMATION --- */
+        @keyframes trapActivate {
+            0% { transform: scale(0.1) rotate(180deg); opacity: 0; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
         }
 
         @media (prefers-reduced-motion: reduce) {
@@ -618,9 +639,17 @@
             </section>
 
             <section id="writeups-section">
-                <h2 class="section-title">Latest Case Files</h2>
+                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-bottom: 1rem;">
+                    <h2 class="section-title" style="margin-bottom: 0;">Latest Case Files</h2>
+                </div>
+                
+                <!-- BỘ LỌC (TAG FILTERS) -->
+                <div id="filter-container" class="filter-container">
+                    <!-- Nút lọc sẽ tự động generate bằng JS -->
+                </div>
+
                 <div id="post-list" class="grid">
-                    <div class="status-msg">
+                    <div class="status-msg" style="grid-column: 1 / -1;">
                         <i class="fa-solid fa-circle-notch fa-spin"></i> Fetching from GitHub API...
                     </div>
                 </div>
@@ -652,7 +681,7 @@
                     <span class="term-btn yellow"></span>
                     <span class="term-btn green"></span>
                 </div>
-                <div class="term-title">Command line</div>
+                <div class="term-title">d4z2@kali: ~</div>
             </div>
             <!-- Bấm vào bất kỳ đâu trong terminal sẽ tự động focus vào ô nhập liệu -->
             <div class="term-body mono" id="term-body" onclick="document.getElementById('term-input').focus()">
@@ -685,6 +714,13 @@
         </footer>
 
     </div> <!-- HẾT KHUNG CONTAINER -->
+
+    <!-- TRAP CARD OVERLAY (EASTER EGG) -->
+    <div id="trap-card-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center; flex-direction: column;">
+        <img src="meme.png" alt="Trap Card" style="max-width: 90%; max-height: 80vh; border-radius: 12px; box-shadow: 0 0 50px rgba(239, 68, 68, 0.6); animation: trapActivate 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;">
+        <p style="color: white; font-family: 'JetBrains Mono', monospace; margin-top: 1.5rem; font-size: 1.2rem; font-weight: bold; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">You activated my trap card!</p>
+        <button onclick="document.getElementById('trap-card-overlay').style.display='none'" style="margin-top: 1rem; padding: 0.6rem 1.2rem; background: var(--accent); color: #000; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-family: 'JetBrains Mono', monospace;">Close</button>
+    </div>
 
     <!-- CÁC SCRIPT XỬ LÝ LOGIC -->
     <script>
@@ -726,7 +762,7 @@
             document.getElementById('about-view').style.display = 'block';
             document.getElementById('main-view').style.display = 'none';
             document.getElementById('reader-view').style.display = 'none';
-            document.getElementById('terminal-view').style.display = 'block'; // HIỆN terminal
+            document.getElementById('terminal-view').style.display = 'block';
             
             document.getElementById('nav-about').classList.add('active');
             document.getElementById('nav-explore').classList.remove('active');
@@ -737,9 +773,7 @@
             document.getElementById('about-view').style.display = 'none';
             document.getElementById('reader-view').style.display = 'none';
             document.getElementById('main-view').style.display = 'block';
-            
-            // Sửa 'block' thành 'none' ở dòng dưới đây để giấu Console đi
-            document.getElementById('terminal-view').style.display = 'none'; 
+            document.getElementById('terminal-view').style.display = 'none'; // Giấu Terminal đi
             
             document.getElementById('nav-about').classList.remove('active');
             document.getElementById('nav-explore').classList.add('active');
@@ -765,7 +799,8 @@
                 posts = JSON.parse(cachedPosts);
                 document.getElementById('stat-writeups').textContent = posts.length;
                 updateRoadProgress(posts.length);
-                renderList();
+                renderFilters();
+                renderList(posts);
                 return;
             }
 
@@ -779,7 +814,8 @@
                         posts = JSON.parse(cachedPosts);
                         document.getElementById('stat-writeups').textContent = posts.length;
                         updateRoadProgress(posts.length);
-                        renderList();
+                        renderFilters();
+                        renderList(posts);
                         return;
                     }
                     if (res.status === 403) {
@@ -802,7 +838,9 @@
                     listEl.innerHTML = `<div class="status-msg" style="grid-column: 1 / -1;">No writeups found. Create an issue with label 'writeup' on GitHub.</div>`;
                     return;
                 }
-                renderList();
+                
+                renderFilters();
+                renderList(posts);
             } catch (err) {
                 listEl.innerHTML = `<div class="status-msg" style="grid-column: 1 / -1; color: #ef4444;"><i class="fa-solid fa-triangle-exclamation"></i> Error loading writeups: ${err.message}</div>`;
                 console.error(err);
@@ -881,10 +919,47 @@
             return html;
         }
 
-        function renderList() {
+        // TÍNH NĂNG TẠO BỘ LỌC (Cố định All, Pwn, Rev)
+        function renderFilters() {
+            const filterContainer = document.getElementById('filter-container');
+            filterContainer.innerHTML = '';
+            
+            const allowedFilters = ['All', 'Pwn', 'Rev'];
+
+            allowedFilters.forEach(cat => {
+                const btn = document.createElement('button');
+                btn.className = `filter-btn ${cat === 'All' ? 'active' : ''}`;
+                btn.textContent = cat;
+                
+                btn.onclick = () => {
+                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    
+                    if (cat === 'All') {
+                        renderList(posts);
+                    } else {
+                        // Tìm bài viết có chứa chuỗi "pwn" hoặc "rev" trong labels
+                        const filtered = posts.filter(p => {
+                            const labels = (p.labels || []).map(l => (typeof l === 'string' ? l : l.name || '').toLowerCase());
+                            return labels.some(l => l.includes(cat.toLowerCase()));
+                        });
+                        renderList(filtered);
+                    }
+                };
+                filterContainer.appendChild(btn);
+            });
+        }
+
+        function renderList(postsToRender) {
             const list = document.getElementById('post-list');
             list.innerHTML = '';
-            posts.forEach(post => {
+            
+            if (postsToRender.length === 0) {
+                list.innerHTML = `<div class="status-msg" style="grid-column: 1 / -1;">No writeups found for this category.</div>`;
+                return;
+            }
+
+            postsToRender.forEach(post => {
                 const cat = getCategory(post);
                 const rating = getRating(post);
                 const date = new Date(post.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
@@ -935,7 +1010,7 @@
             document.getElementById('about-view').style.display = 'none';
             document.getElementById('main-view').style.display = 'none';
             document.getElementById('reader-view').style.display = 'block';
-            document.getElementById('terminal-view').style.display = 'none'; // ẨN terminal khi đọc
+            document.getElementById('terminal-view').style.display = 'none'; // Giấu Terminal đi
             
             document.getElementById('nav-about').classList.remove('active');
             document.getElementById('nav-explore').classList.add('active');
@@ -1054,7 +1129,7 @@
 
         function processCommand(cmd) {
             // Buffer Overflow Easter Egg
-            if (cmd.length > 50) {
+            if (cmd.length > 55) {
                 const outLine = document.createElement('p');
                 outLine.className = 'term-output';
                 outLine.style.color = '#ef4444'; 
@@ -1078,13 +1153,13 @@
                     termOutputContainer.innerHTML = '';
                     return; 
                 case 'help':
-                    output = 'Available commands: whoami, date, clear, echo, ls, cat, sudo';
+                    output = 'Available commands: whoami, date, clear, echo, ls, cat, submit, sudo';
                     break;
                 case 'echo':
                     output = escapeHTML(args.slice(1).join(' '));
                     break;
                 case 'ls':
-                    output = '<span style="color: #3b82f6;">writeups</span>&nbsp;&nbsp;&nbsp;<span style="color: #27c93f;">flag.txt</span>&nbsp;&nbsp;&nbsp;notes.md';
+                    output = '<span style="color: #3b82f6;">writeups</span>&nbsp;&nbsp;&nbsp;<span style="color: #27c93f;">flag.txt</span>';
                     break;
                 case 'cat':
                     if (args[1] === 'flag.txt') {
@@ -1093,6 +1168,21 @@
                         output = `cat: ${escapeHTML(args[1])}: Permission denied`;
                     } else {
                         output = 'Usage: cat &lt;file&gt;';
+                    }
+                    break;
+                case 'submit':
+                    if (!args[1]) {
+                        output = 'Usage: submit &lt;flag&gt;';
+                    } else if (args[1] === 'D4z2{access_granted_welcome_to_the_mainframe}') {
+                        output = `<span style="color: #27c93f; font-weight: bold;">[+] FLAG ACCEPTED!</span> Brace yourself...`;
+                        
+                        // KÍCH HOẠT HIỆU ỨNG TRAP CARD SAU 0.5 GIÂY
+                        setTimeout(() => {
+                            document.getElementById('trap-card-overlay').style.display = 'flex';
+                        }, 500);
+                        
+                    } else {
+                        output = `<span style="color: #ef4444;">[-] Invalid flag. Keep digging!</span>`;
                     }
                     break;
                 case 'sudo':
