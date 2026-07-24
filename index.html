@@ -180,13 +180,6 @@
             background-color: rgba(255, 255, 255, 0.15);
         }
 
-        .hero-actions {
-            display: flex;
-            gap: 1rem;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
         .btn {
             display: inline-flex;
             align-items: center;
@@ -308,7 +301,6 @@
             min-height: 1.7em;
         }
         .about-text h1 .accent-text { color: var(--accent); }
-        .about-role { color: var(--text-muted); font-family: 'JetBrains Mono', monospace; font-size: 0.95rem; margin-bottom: 1.5rem; }
         
         .about-bio { color: var(--text-muted); font-size: 1.02rem; line-height: 1.85; margin-bottom: 1rem; max-width: 560px; }
 
@@ -381,13 +373,84 @@
         .status-msg { text-align: center; padding: 3rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
         .status-msg i { color: var(--accent); margin-right: 0.5rem; }
 
-        @media (prefers-reduced-motion: reduce) {
-            .avatar-ring, .about-glow { animation: none; }
+        /* --- INTERACTIVE TERMINAL SECTION STYLES --- */
+        .terminal-section {
+            margin-top: 4rem;
+            margin-bottom: 2rem;
+            background-color: #0c0c0c;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
         }
 
-        /* --- FOOTER STYLES --- */
+        .term-header {
+            display: flex;
+            align-items: center;
+            background-color: #1a1a1a;
+            padding: 0.6rem 1rem;
+            border-bottom: 1px solid var(--border);
+            position: relative;
+        }
+
+        .term-buttons { display: flex; gap: 8px; }
+        .term-btn { width: 12px; height: 12px; border-radius: 50%; }
+        .term-btn.red { background-color: #ff5f56; }
+        .term-btn.yellow { background-color: #ffbd2e; }
+        .term-btn.green { background-color: #27c93f; }
+
+        .term-title {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.8rem;
+            color: #888;
+            font-weight: 500;
+        }
+
+        .term-body {
+            padding: 1.25rem;
+            font-size: 0.9rem;
+            line-height: 1.7;
+            color: #d4d4d8;
+            height: 250px;
+            overflow-y: auto;
+            cursor: text;
+        }
+        
+        .term-body::-webkit-scrollbar { width: 8px; }
+        .term-body::-webkit-scrollbar-track { background: #0c0c0c; }
+        .term-body::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+        .term-body::-webkit-scrollbar-thumb:hover { background: #555; }
+
+        .term-body p { margin-bottom: 0.4rem; }
+        .term-user { color: #2dd4bf; font-weight: bold; }
+        .term-path { color: #3b82f6; font-weight: bold; }
+        .term-cmd { color: #facc15; }
+        .term-output { color: #a1a1aa; padding-left: 1rem; }
+        
+        .term-input-line {
+            display: flex;
+            align-items: center;
+            margin-top: 0.4rem;
+        }
+
+        #term-input {
+            background: transparent;
+            border: none;
+            color: #facc15;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            flex: 1;
+            margin-left: 8px;
+            outline: none;
+            caret-color: #d4d4d8;
+        }
+
+        /* --- FOOTER CŨ STYLES --- */
         .site-footer {
-            margin-top: 5rem;
+            margin-top: 4rem;
             padding: 2rem 0;
             border-top: 1px solid var(--border);
             color: var(--text-muted);
@@ -437,6 +500,10 @@
                 flex-direction: column;
                 text-align: center;
             }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .avatar-ring, .about-glow { animation: none; }
         }
     </style>
 </head>
@@ -577,7 +644,32 @@
             </div>
         </div>
 
-        <!-- FOOTER -->
+        <!-- INTERACTIVE LINUX TERMINAL SECTION -->
+        <div class="terminal-section">
+            <div class="term-header">
+                <div class="term-buttons">
+                    <span class="term-btn red"></span>
+                    <span class="term-btn yellow"></span>
+                    <span class="term-btn green"></span>
+                </div>
+                <div class="term-title">Command line</div>
+            </div>
+            <!-- Bấm vào bất kỳ đâu trong terminal sẽ tự động focus vào ô nhập liệu -->
+            <div class="term-body mono" id="term-body" onclick="document.getElementById('term-input').focus()">
+                <div id="term-output-container">
+                    <p><span class="term-user">d4z2@kali</span>:<span class="term-path">~</span>$ <span class="term-cmd">echo "Welcome to my site, buddy!"</span></p>
+                    <p class="term-output">Welcome to my site, buddy!</p>
+                    <p class="term-output" style="font-size: 0.8rem; margin-top:-5px;">Type 'help' to see available commands.</p>
+                </div>
+                
+                <div class="term-input-line">
+                    <span class="term-user">d4z2@kali</span>:<span class="term-path">~</span>$ 
+                    <input type="text" id="term-input" autocomplete="off" spellcheck="false">
+                </div>
+            </div>
+        </div>
+
+        <!-- FOOTER GIỮ NGUYÊN BÊN DƯỚI -->
         <footer class="site-footer">
             <div class="footer-content mono">
                 <div class="footer-left">
@@ -592,7 +684,7 @@
             </div>
         </footer>
 
-    </div>
+    </div> <!-- HẾT KHUNG CONTAINER -->
 
     <!-- CÁC SCRIPT XỬ LÝ LOGIC -->
     <script>
@@ -663,7 +755,6 @@
             const cachedPosts = localStorage.getItem(cacheKey);
             const cachedTime = localStorage.getItem(cacheTimeKey);
 
-            // Kiểm tra nếu cache còn mới (dưới 10 phút) thì dùng luôn không gọi API nữa
             if (cachedPosts && cachedTime && (Date.now() - cachedTime < 600000)) {
                 posts = JSON.parse(cachedPosts);
                 document.getElementById('stat-writeups').textContent = posts.length;
@@ -679,7 +770,6 @@
                 
                 if (!res.ok) {
                     if (res.status === 403 && cachedPosts) {
-                        // Nếu bị 403 nhưng có cache cũ, hiển thị dữ liệu cache thay vì báo lỗi
                         posts = JSON.parse(cachedPosts);
                         document.getElementById('stat-writeups').textContent = posts.length;
                         updateRoadProgress(posts.length);
@@ -695,7 +785,6 @@
                 const data = await res.json();
                 posts = data.filter(item => !item.pull_request);
                 
-                // Lưu vào Cache
                 localStorage.setItem(cacheKey, JSON.stringify(posts));
                 localStorage.setItem(cacheTimeKey, Date.now());
 
@@ -917,6 +1006,88 @@
             }
 
             runCycle();
+        }
+
+        // --- XỬ LÝ INTERACTIVE TERMINAL ---
+        const termInput = document.getElementById('term-input');
+        const termOutputContainer = document.getElementById('term-output-container');
+        const termBody = document.getElementById('term-body');
+
+        if (termInput) {
+            termInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    const command = this.value.trim();
+                    this.value = ''; 
+                    
+                    if (command !== '') {
+                        const cmdLine = document.createElement('p');
+                        cmdLine.innerHTML = `<span class="term-user">d4z2@kali</span>:<span class="term-path">~</span>$ <span class="term-cmd">${escapeHTML(command)}</span>`;
+                        termOutputContainer.appendChild(cmdLine);
+
+                        processCommand(command);
+                    } else {
+                        const emptyLine = document.createElement('p');
+                        emptyLine.innerHTML = `<span class="term-user">d4z2@kali</span>:<span class="term-path">~</span>$ `;
+                        termOutputContainer.appendChild(emptyLine);
+                    }
+
+                    termBody.scrollTop = termBody.scrollHeight;
+                }
+            });
+        }
+
+        function escapeHTML(str) {
+            return str.replace(/[&<>'"]/g, 
+                tag => ({
+                    '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+                }[tag] || tag)
+            );
+        }
+
+        function processCommand(cmd) {
+            const args = cmd.split(' ').filter(Boolean);
+            const mainCmd = args[0].toLowerCase();
+            let output = '';
+
+            switch (mainCmd) {
+                case 'whoami':
+                    output = 'd4z2';
+                    break;
+                case 'date':
+                    output = new Date().toString();
+                    break;
+                case 'clear':
+                    termOutputContainer.innerHTML = '';
+                    return; 
+                case 'help':
+                    output = 'Available commands: whoami, date, clear, echo, ls, cat, sudo';
+                    break;
+                case 'echo':
+                    output = escapeHTML(args.slice(1).join(' '));
+                    break;
+                case 'ls':
+                    output = '<span style="color: #3b82f6;">writeups</span>&nbsp;&nbsp;&nbsp;<span style="color: #27c93f;">flag.txt</span>';
+                    break;
+                case 'cat':
+                    if (args[1] === 'flag.txt') {
+                        output = 'D4z2{access_granted_welcome_to_the_mainframe}';
+                    } else if (args[1]) {
+                        output = `cat: ${escapeHTML(args[1])}: Permission denied`;
+                    } else {
+                        output = 'Usage: cat &lt;file&gt;';
+                    }
+                    break;
+                case 'sudo':
+                    output = 'Nice try. This incident will be reported.';
+                    break;
+                default:
+                    output = `bash: ${escapeHTML(mainCmd)}: command not found`;
+            }
+
+            const outLine = document.createElement('p');
+            outLine.className = 'term-output';
+            outLine.innerHTML = output;
+            termOutputContainer.appendChild(outLine);
         }
 
         // Khởi động
