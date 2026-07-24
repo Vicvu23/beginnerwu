@@ -129,7 +129,7 @@
         /* --- ROAD TO 100 WU PROGRESS BAR --- */
         .progress-container {
             margin-bottom: 2rem;
-            max-width: 700px;
+            width: 100%;
             background: rgba(255, 255, 255, 0.02);
             border: 1px solid var(--border);
             padding: 1.25rem;
@@ -448,7 +448,7 @@
             caret-color: #d4d4d8;
         }
 
-        /* --- FOOTER CŨ STYLES --- */
+        /* --- FOOTER STYLES --- */
         .site-footer {
             margin-top: 4rem;
             padding: 2rem 0;
@@ -652,13 +652,13 @@
                     <span class="term-btn yellow"></span>
                     <span class="term-btn green"></span>
                 </div>
-                <div class="term-title">Command line</div>
+                <div class="term-title">d4z2@kali: ~</div>
             </div>
             <!-- Bấm vào bất kỳ đâu trong terminal sẽ tự động focus vào ô nhập liệu -->
             <div class="term-body mono" id="term-body" onclick="document.getElementById('term-input').focus()">
                 <div id="term-output-container">
-                    <p><span class="term-user">d4z2@kali</span>:<span class="term-path">~</span>$ <span class="term-cmd">echo "Welcome to my site, buddy!"</span></p>
-                    <p class="term-output">Welcome to my site, buddy!</p>
+                    <p><span class="term-user">d4z2@kali</span>:<span class="term-path">~</span>$ <span class="term-cmd">echo "Welcome to my interactive shell!"</span></p>
+                    <p class="term-output">Welcome to my interactive shell!</p>
                     <p class="term-output" style="font-size: 0.8rem; margin-top:-5px;">Type 'help' to see available commands.</p>
                 </div>
                 
@@ -669,7 +669,7 @@
             </div>
         </div>
 
-        <!-- FOOTER GIỮ NGUYÊN BÊN DƯỚI -->
+        <!-- FOOTER -->
         <footer class="site-footer">
             <div class="footer-content mono">
                 <div class="footer-left">
@@ -726,7 +726,7 @@
             document.getElementById('about-view').style.display = 'block';
             document.getElementById('main-view').style.display = 'none';
             document.getElementById('reader-view').style.display = 'none';
-            document.getElementById('terminal-view').style.display = 'block'; // Hiển thị Terminal
+            document.getElementById('terminal-view').style.display = 'block'; // HIỆN terminal
             
             document.getElementById('nav-about').classList.add('active');
             document.getElementById('nav-explore').classList.remove('active');
@@ -737,7 +737,7 @@
             document.getElementById('about-view').style.display = 'none';
             document.getElementById('reader-view').style.display = 'none';
             document.getElementById('main-view').style.display = 'block';
-            document.getElementById('terminal-view').style.display = 'block'; // Hiển thị Terminal
+            document.getElementById('terminal-view').style.display = 'block'; // HIỆN terminal
             
             document.getElementById('nav-about').classList.remove('active');
             document.getElementById('nav-explore').classList.add('active');
@@ -933,7 +933,7 @@
             document.getElementById('about-view').style.display = 'none';
             document.getElementById('main-view').style.display = 'none';
             document.getElementById('reader-view').style.display = 'block';
-            document.getElementById('terminal-view').style.display = 'none'; // Giấu Terminal đi
+            document.getElementById('terminal-view').style.display = 'none'; // ẨN terminal khi đọc
             
             document.getElementById('nav-about').classList.remove('active');
             document.getElementById('nav-explore').classList.add('active');
@@ -1051,22 +1051,23 @@
         }
 
         function processCommand(cmd) {
-            if (cmd.length >= 36) {
+            // Buffer Overflow Easter Egg
+            if (cmd.length > 50) {
                 const outLine = document.createElement('p');
                 outLine.className = 'term-output';
-                outLine.style.color = '#ef4444'; // Màu đỏ cảnh báo sập chương trình
+                outLine.style.color = '#ef4444'; 
                 outLine.innerHTML = 'Segmentation fault (core dumped) - Are you trying to overflow?';
                 termOutputContainer.appendChild(outLine);
-                return; // Dừng luôn, không xử lý các lệnh bên dưới nữa
+                return; 
             }
-            
+
             const args = cmd.split(' ').filter(Boolean);
             const mainCmd = args[0].toLowerCase();
             let output = '';
 
             switch (mainCmd) {
                 case 'whoami':
-                    output = 'd4z2';
+                    output = 'd4z2 - Curious Explorer, CTF Player, Builder.';
                     break;
                 case 'date':
                     output = new Date().toString();
@@ -1081,11 +1082,11 @@
                     output = escapeHTML(args.slice(1).join(' '));
                     break;
                 case 'ls':
-                    output = '<span style="color: #3b82f6;">writeups</span>&nbsp;&nbsp;&nbsp;<span style="color: #27c93f;">flag.txt</span>';
+                    output = '<span style="color: #3b82f6;">writeups</span>&nbsp;&nbsp;&nbsp;<span style="color: #27c93f;">flag.txt</span>&nbsp;&nbsp;&nbsp;notes.md';
                     break;
                 case 'cat':
                     if (args[1] === 'flag.txt') {
-                        output = 'D4z2{access_granted_welcome_to_the_mainframe}';
+                        output = 'KMA{w3lc0m3_t0_my_w0rld}';
                     } else if (args[1]) {
                         output = `cat: ${escapeHTML(args[1])}: Permission denied`;
                     } else {
