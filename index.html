@@ -1045,6 +1045,15 @@
         }
 
         function processCommand(cmd) {
+            if (cmd.length >= 36) {
+                const outLine = document.createElement('p');
+                outLine.className = 'term-output';
+                outLine.style.color = '#ef4444'; // Màu đỏ cảnh báo sập chương trình
+                outLine.innerHTML = 'Segmentation fault (core dumped) - Are you trying to overflow?';
+                termOutputContainer.appendChild(outLine);
+                return; // Dừng luôn, không xử lý các lệnh bên dưới nữa
+            }
+            
             const args = cmd.split(' ').filter(Boolean);
             const mainCmd = args[0].toLowerCase();
             let output = '';
